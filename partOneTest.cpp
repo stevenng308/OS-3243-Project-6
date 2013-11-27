@@ -55,7 +55,7 @@ int main(){
     printf("%d", memory.findFreeMemory());*/
     loadSystem();
     memory.print();
-    
+
     return 0;
 }
 
@@ -68,7 +68,6 @@ void loadSystem()
 
     int c = 0;
     while (ifile.good()){
-		if(b
 		memory.memArray[c] = b; 
 		b = ifile.get();
 		++c;
