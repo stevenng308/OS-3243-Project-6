@@ -8,8 +8,11 @@
 
 #include<iostream>
 #include<fstream>
+#include<deque>
+#include<cstdlib>
 #define BYTECOUNT 1474560
-#define FIRST_BYTE_ENTRY 16896
+#define BEGIN_BYTE_ENTRY 16896
+#define SECTOR_SIZE 512
 
 using namespace std;
 
@@ -23,12 +26,13 @@ struct MainMemory{
     byte memArray[BYTECOUNT]; // 0-511 is for the boot partition
     
     MainMemory();
-    int findFreeMemory();
+    void findFreeSector();
     void insertIntoMemory(byte b);
     void print();
 };
 
 MainMemory memory;
+deque<int> freeSectors;
 
 void loadSystem();
 int main(){
@@ -55,7 +59,12 @@ int main(){
     printf("%d", memory.findFreeMemory());*/
     loadSystem();
     memory.print();
-
+    memory.findFreeSector();
+	for (uint i = 0; i < freeSectors.size(); i++)
+	{
+		printf("%d", freeSectors[i]);
+		printf("\n");
+	}
     return 0;
 }
 
@@ -82,15 +91,28 @@ MainMemory::MainMemory()
 	}
 }
 
-int MainMemory::findFreeMemory(){
-    for (int i = 0; i < BYTECOUNT; i++)
-	{
-		if (memArray[i] == 157)
+void MainMemory::findFreeSector(){
+	int sector = 33;
+	bool empty;
+    for (int i = BEGIN_BYTE_ENTRY; i < BYTECOUNT; )
+    {
+		empty = true;
+		for (int j = i; j < i + SECTOR_SIZE; j++)
 		{
-			return i;
+			if (memory.memArray[j])
+			{
+				empty = false;
+				break;
+			} 
 		}
+		if (empty)
+		{
+			freeSectors.push_back(sector);
+		}
+		sector++;
+		i += SECTOR_SIZE;
 	}
-	return -1;
+	
 }
 
 void MainMemory::insertIntoMemory(byte b)
