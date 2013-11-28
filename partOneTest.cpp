@@ -58,8 +58,8 @@ MainMemory memory;
 
 // Declare Methods
 void loadSystem();
-void setEntry(short a);
-short getEntry(short b);
+void setEntry(short pos, short val);
+short getEntry(short pos);
 
 int main(){
     /*ifstream ifile("fdd.flp",std::ifstream::in);
@@ -85,6 +85,8 @@ int main(){
     printf("%d", memory.findFreeMemory());*/
     loadSystem();
     memory.print();
+    setEntry(0, 0xFF0);
+    setEntry(1, 0xFF1);
     //Entry e = {0, 11, 63};
     //printf("%d\n", e.b);
     //printf("%d\n", e.c);
@@ -115,25 +117,26 @@ void loadSystem()
 
 /**
 * Sets a FAT and FAT2 entries to be the short value that is entered
-* param a the value we intend to set in the FAT
+* param val the value we intend to set in the FAT
+* param pos the index in the FAT tables
 */
-void setEntry(short a){
+void setEntry(short pos, short val){
     // In the schema [yz Zx XY], the lower-case letters represent what we call
     // the low-order entry, the high-order entry would be the upper-case letters.
-    if(a<0 || a >= MAX_NUM_ENTRY)
+    if(pos<0 || pos >= MAX_NUM_ENTRY)
         return; // faulty sector selection, do nothing
     // Set both FAT and FAT2 entries 
     for(int i = 0; i < 2; i++){
-        int start = (FIRST_FAT_BYTE + i * FAT_SIZE) + (a/2) * 3; // set first byte of entry pair
-        if(a%2==0){ // setting a low-order entry
-            memory.memArray[start] = (a &  0xFF); // set yz to the lowest byte of short <a>
+        int start = (FIRST_FAT_BYTE + i * FAT_SIZE) + (pos/2) * 3; // set first byte of entry pair
+        if(pos%2==0){ // setting a low-order entry
+            memory.memArray[start] = (val &  0xFF); // set yz to the lowest byte of short <val>
             memory.memArray[start + 1] &= 0xF0; // clear low nibble here
-            memory.memArray[start + 1] |= ((a >> 8) & 0x0F); // set x to nibble 2 of <a>
+            memory.memArray[start + 1] |= ((val >> 8) & 0x0F); // set x to nibble 2 of <val>
         }
         else{ // setting a high-order entry
-            memory.memArray[start + 2] = ((a & 0x0FF0) >> 4); // set XY to nibbles 2 and 3 of <a>
+            memory.memArray[start + 2] = ((val & 0x0FF0) >> 4); // set XY to nibbles 2 and 3 of <val>
             memory.memArray[start + 1] &= 0x0F; // clear high nibble here
-            memory.memArray[start + 1] |= ((a & 0xF) << 4); // set Z to nibble 4 in <a>
+            memory.memArray[start + 1] |= ((val & 0xF) << 4); // set Z to nibble 4 in <val>
         }
     }
 }
@@ -142,16 +145,16 @@ void setEntry(short a){
 * Retrieves the value sent in the parameter from the FAT table
 * param b the index in the FAT table that we want
 */
-short getEntry(short b){
+short getEntry(short pos){
     // Using the same schema as in 'setEntry()' we will extract a FAT entry's
     // value and return it as a short [schema: yz Zx XY]
-    if(b<0 || b >= MAX_NUM_ENTRY)
+    if(pos<0 || pos >= MAX_NUM_ENTRY)
         return -1; // faulty request here, return error code (-1)
-    if(b%2==0){ // requesting a low-order entry
-        return memory.memArray[b/2] + ((memory.memArray[b/2 + 1] & 0x0F) << 8);
+    if(pos%2==0){ // requesting a low-order entry
+        return memory.memArray[pos/2] + ((memory.memArray[pos/2 + 1] & 0x0F) << 8);
     }
     else{ // requesting a high-order entry
-        return (memory.memArray[b/2 + 2] << 4) + (memory.memArray[b/2 + 1] >> 4);
+        return (memory.memArray[pos/2 + 2] << 4) + (memory.memArray[pos/2 + 1] >> 4);
     }
 }
 
