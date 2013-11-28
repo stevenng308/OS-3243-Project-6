@@ -1,1 +1,3 @@
 http://www.c-jump.com/CIS24/Slides/FAT/F01_0230_fat12.htm
+
+http://cs.brynmawr.edu/cs355/hws/UnderstandingFAT12.pdf
