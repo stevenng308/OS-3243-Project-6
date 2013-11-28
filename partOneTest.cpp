@@ -99,10 +99,10 @@ void loadSystem()
 
 MainMemory::MainMemory()
 {
-	for (int i = 0; i < BYTECOUNT; i++)
+	/*for (int i = 0; i < BYTECOUNT; i++)
 	{
 		memArray[i] = 157;
-	}
+	}*/
 }
 
 void MainMemory::findFreeSector(){
