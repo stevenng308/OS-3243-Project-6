@@ -115,7 +115,7 @@ void loadSystem()
 
 /**
 * Sets a FAT and FAT2 entries to be the short value that is entered
-* parama a the value we intend to set in the FAT
+* param a the value we intend to set in the FAT
 */
 void setEntry(short a){
     // In the schema [yz Zx XY], the lower-case letters represent what we call
