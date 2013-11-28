@@ -13,10 +13,11 @@
 #define BYTECOUNT 1474560
 #define BEGIN_BYTE_ENTRY 16896
 #define SECTOR_SIZE 512
-#define MAX_NUM_ENTRY 2849 //2880 - 33 = 2847 + 2 reserved = 2849
+#define MAX_FAT_ENTRY 2848 //2879 - 33 = 2846 + 2 reserved = 2848
 #define START_FAT 2
 #define FIRST_FAT_BYTE 512
 #define FAT_SIZE 4608
+#define LAST_INVALID_ENTRY 3071 // first invalid entry is 2849
 
 using namespace std;
 
@@ -47,7 +48,7 @@ struct Entry
 
 struct FileTable
 {
-	Entry table[MAX_NUM_ENTRY];
+	Entry table[MAX_FAT_ENTRY];
 };*/
 
 
@@ -58,8 +59,10 @@ MainMemory memory;
 
 // Declare Methods
 void loadSystem();
+void initializeFAT();
 void setEntry(short pos, short val);
 short getEntry(short pos);
+
 
 int main(){
     /*ifstream ifile("fdd.flp",std::ifstream::in);
@@ -85,8 +88,7 @@ int main(){
     printf("%d", memory.findFreeMemory());*/
     loadSystem();
     memory.print();
-    setEntry(0, 0xFF0);
-    setEntry(1, 0xFF1);
+    initializeFAT();
     //Entry e = {0, 11, 63};
     //printf("%d\n", e.b);
     //printf("%d\n", e.c);
@@ -115,6 +117,20 @@ void loadSystem()
 	}
 }
 
+void initializeFAT(){
+    setEntry(0, 0xFF0);
+    setEntry(1, 0xFF1);
+    // Initialize all the unused sectors
+    for(short i = 2; i <= MAX_FAT_ENTRY; i++){
+        setEntry(i, 0x00);
+    }
+    // The following FAT entries are invalid and do not represent
+    // any available sector on disk.
+    for(short i = MAX_FAT_ENTRY + 1; i <= LAST_INVALID_ENTRY; i++){
+        setEntry(i, 0xFF7);
+    }
+}
+
 /**
 * Sets a FAT and FAT2 entries to be the short value that is entered
 * param val the value we intend to set in the FAT
@@ -123,7 +139,7 @@ void loadSystem()
 void setEntry(short pos, short val){
     // In the schema [yz Zx XY], the lower-case letters represent what we call
     // the low-order entry, the high-order entry would be the upper-case letters.
-    if(pos<0 || pos >= MAX_NUM_ENTRY)
+    if(pos<0 || pos > MAX_FAT_ENTRY)
         return; // faulty sector selection, do nothing
     // Set both FAT and FAT2 entries 
     for(int i = 0; i < 2; i++){
@@ -148,7 +164,7 @@ void setEntry(short pos, short val){
 short getEntry(short pos){
     // Using the same schema as in 'setEntry()' we will extract a FAT entry's
     // value and return it as a short [schema: yz Zx XY]
-    if(pos<0 || pos >= MAX_NUM_ENTRY)
+    if(pos<0 || pos > MAX_FAT_ENTRY)
         return -1; // faulty request here, return error code (-1)
     if(pos%2==0){ // requesting a low-order entry
         return memory.memArray[pos/2] + ((memory.memArray[pos/2 + 1] & 0x0F) << 8);
