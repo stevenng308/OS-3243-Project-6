@@ -90,6 +90,9 @@ int main(){
     loadSystem();
     memory.print();
     initializeFAT();
+    printFAT();
+    short a = 0xFF7; 
+    cout << "a = " << a << endl;
     //Entry e = {0, 11, 63};
     //printf("%d\n", e.b);
     //printf("%d\n", e.c);
@@ -143,8 +146,9 @@ void setEntry(short pos, short val){
     if(pos<0 || pos > LAST_INVALID_ENTRY)
         return; // faulty sector selection, do nothing
     // Set both FAT and FAT2 entries 
+    int start;
     for(int i = 0; i < 2; i++){
-        int start = (FIRST_FAT_BYTE + i * FAT_SIZE) + (pos/2) * 3; // set first byte of entry pair
+        start = (FIRST_FAT_BYTE + i * FAT_SIZE) + (pos/2) * 3; // set first byte of entry pair
         if(pos%2==0){ // setting a low-order entry
             memory.memArray[start] = (val &  0xFF); // set yz to the lowest byte of short <val>
             memory.memArray[start + 1] &= 0xF0; // clear low nibble here
@@ -162,10 +166,19 @@ void setEntry(short pos, short val){
 * Prints the contents of the FAT tables
 */
 void printFAT(){
-    cout << "PRIMARY FAT TABLE:\n";
-    for(int i = 0; i <= LAST_INVALID_ENTRY; i++){
-        
+    cout << "\nPRIMARY FAT TABLE:\n";
+    for(int i = 0; i < (LAST_INVALID_ENTRY+1)/20 + 1; i++){
+        if((i+1)*20-1 <= LAST_INVALID_ENTRY)
+            printf("%04d-%04d: ",i*20,(i+1)*20-1);
+        else
+            printf("%04d-%04d: ",i*20,LAST_INVALID_ENTRY);
+        for(int j = 0; j < 20; j++){
+            if(i*20+j <= LAST_INVALID_ENTRY)
+                printf("%03x ",getEntry(i*20+j));   
+        }
+        cout << endl;
     }
+    cout << endl;
 }
 
 /**
@@ -177,11 +190,12 @@ short getEntry(short pos){
     // value and return it as a short [schema: yz Zx XY]
     if(pos<0 || pos > LAST_INVALID_ENTRY)
         return -1; // faulty request here, return error code (-1)
+    int start = FIRST_FAT_BYTE + (pos/2) * 3; // set first byte of entry pair
     if(pos%2==0){ // requesting a low-order entry
-        return memory.memArray[pos/2] + ((memory.memArray[pos/2 + 1] & 0x0F) << 8);
+        return memory.memArray[start] + ((memory.memArray[start + 1] & 0x0F) << 8);
     }
     else{ // requesting a high-order entry
-        return (memory.memArray[pos/2 + 2] << 4) + (memory.memArray[pos/2 + 1] >> 4);
+        return (memory.memArray[start + 2] << 4) + (memory.memArray[start + 1] >> 4);
     }
 }
 
