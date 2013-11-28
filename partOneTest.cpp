@@ -13,6 +13,8 @@
 #define BYTECOUNT 1474560
 #define BEGIN_BYTE_ENTRY 16896
 #define SECTOR_SIZE 512
+#define MAX_NUM_ENTRY 2849 //2880 - 33 = 2847 + 2 reserved = 2849
+#define START_FAT 2
 
 using namespace std;
 
@@ -29,6 +31,18 @@ struct MainMemory{
     void findFreeSector();
     void insertIntoMemory(byte b);
     void print();
+};
+
+struct Entry
+{
+	char a : 8;
+	char b : 8;
+	char c : 8;
+};
+
+struct FileTable
+{
+	Entry table[MAX_NUM_ENTRY];
 };
 
 MainMemory memory;
@@ -59,12 +73,12 @@ int main(){
     printf("%d", memory.findFreeMemory());*/
     loadSystem();
     memory.print();
-    memory.findFreeSector();
+    /*memory.findFreeSector();
 	for (uint i = 0; i < freeSectors.size(); i++)
 	{
 		printf("%d", freeSectors[i]);
 		printf("\n");
-	}
+	}*/
     return 0;
 }
 
