@@ -37,8 +37,6 @@ struct MainMemory{
 };
 
 MainMemory memory;
-FileTable myFileTable;
-
 
 // Declare Methods
 void loadSystem();
@@ -76,6 +74,11 @@ void loadSystem()
 
 void MainMemory::setEntry(ushort pos, ushort val)
 {
+	if (pos < 0 || pos > LAST_INVALID_ENTRY || (pos + 1) % 3 == 0)
+	{
+		return;
+	}
+	
 	if (pos % 2 == 0)
 	{
 		memArray[FIRST_FAT_BYTE + pos] = val & 0xFF; //keep the first 8 bits. FF = 1111 1111. whole byte no need for +=
@@ -90,6 +93,11 @@ void MainMemory::setEntry(ushort pos, ushort val)
 
 ushort MainMemory::getEntry(ushort pos)
 {
+	if (pos < 0 || pos > LAST_INVALID_ENTRY || (pos + 1) % 3 == 0)
+	{
+		return LAST_INVALID_ENTRY;
+	}
+	
 	if (pos % 2 == 0)
 	{
 		return memArray[FIRST_FAT_BYTE + pos] + ((memArray[FIRST_FAT_BYTE + pos + 1] & 0x0F) << 8); //get the byte at pos. at pos + 1, get the first 4 bits and left shift by 8 to become the 4 msb(most sig bit)
