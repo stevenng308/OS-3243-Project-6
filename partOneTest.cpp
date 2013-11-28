@@ -16,9 +16,10 @@
 #define MAX_FAT_ENTRY 2848 //2879 - 33 = 2846 + 2 reserved = 2848
 #define START_FAT 2
 #define FIRST_FAT_BYTE 512
-#define FAT_SIZE 4608
+#define FAT_SIZE 4608 //going to have to rethink the limits on FAT size. I am getting different #. 5119 is the last spot for the last entry in FAT table.
 #define LAST_INVALID_ENTRY 3071 // first invalid entry is 2849
-
+#define FIRST_FILE_BYTE 9728
+#define FILE_ENTRY_SIZE 32
 using namespace std;
 
 // Define Structs
@@ -35,6 +36,24 @@ struct MainMemory{
     void findFreeSector();
     void insertIntoMemory(byte b);
     void print();
+};
+
+struct File
+{
+	byte name[8];
+	byte ext[3];
+	byte attr;
+	ushort reserved;
+	ushort createTime;
+	ushort createDate;
+	ushort lastAccessDate;
+	ushort ignore;
+	ushort lastModifyTime;
+	ushort lastModfiyDate;
+	ushort firstLogicalSector;
+	float size;
+	
+	File(); 
 };
 
 
@@ -64,6 +83,8 @@ void initializeFAT();
 void setEntry(short pos, short val);
 void printFAT();
 short getEntry(short pos);
+void initializeDirectory();
+void createFile(byte n, byte e, byte a, ushort r, ushort ct, ushort cd, ushort lad, ushort i, ushort lmt, ushort lmd, ushort fls, ushort s);
 
 
 int main(){
@@ -157,6 +178,29 @@ void loadSystem()
 	}
 }
 
+void initializeDirectory()
+{
+	File root;
+	for (int i = FIRST_FILE_BYTE; i < FIRST_FILE_BYTE + FILE_ENTRY_SIZE; i++)
+	{
+		if (i < 8)
+		{
+			memory.memArray[i] = root.name[i];
+		}
+		else if (i < 11)
+		{
+			memory.memArray[i] = root.ext[i - 8];
+		}
+		else if (i > 11)
+		{
+			memory.memArray[i] = 0;
+		}
+		else
+		{
+			memory.memArray[i] = root.attr;
+		}
+	}
+}
 void initializeFAT(){
     setEntry(0, 0xFF0);
     setEntry(1, 0xFF1);
@@ -297,4 +341,13 @@ void MainMemory::print()
 		cout << endl;
 	}
 	cout << endl;
+}
+
+File::File()
+{
+	name[0] = 0;
+	attr = 0;
+	reserved = createDate = createTime = lastAccessDate = lastModfiyDate = lastModifyTime = ignore = 0;
+	size = 0.0f;
+	firstLogicalSector = 0;
 }
