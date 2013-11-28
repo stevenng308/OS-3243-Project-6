@@ -61,6 +61,7 @@ MainMemory memory;
 void loadSystem();
 void initializeFAT();
 void setEntry(short pos, short val);
+void printFAT();
 short getEntry(short pos);
 
 
@@ -139,7 +140,7 @@ void initializeFAT(){
 void setEntry(short pos, short val){
     // In the schema [yz Zx XY], the lower-case letters represent what we call
     // the low-order entry, the high-order entry would be the upper-case letters.
-    if(pos<0 || pos > MAX_FAT_ENTRY)
+    if(pos<0 || pos > LAST_INVALID_ENTRY)
         return; // faulty sector selection, do nothing
     // Set both FAT and FAT2 entries 
     for(int i = 0; i < 2; i++){
@@ -158,13 +159,23 @@ void setEntry(short pos, short val){
 }
 
 /**
+* Prints the contents of the FAT tables
+*/
+void printFAT(){
+    cout << "PRIMARY FAT TABLE:\n";
+    for(int i = 0; i <= LAST_INVALID_ENTRY; i++){
+        
+    }
+}
+
+/**
 * Retrieves the value sent in the parameter from the FAT table
 * param b the index in the FAT table that we want
 */
 short getEntry(short pos){
     // Using the same schema as in 'setEntry()' we will extract a FAT entry's
     // value and return it as a short [schema: yz Zx XY]
-    if(pos<0 || pos > MAX_FAT_ENTRY)
+    if(pos<0 || pos > LAST_INVALID_ENTRY)
         return -1; // faulty request here, return error code (-1)
     if(pos%2==0){ // requesting a low-order entry
         return memory.memArray[pos/2] + ((memory.memArray[pos/2 + 1] & 0x0F) << 8);
