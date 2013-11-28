@@ -26,6 +26,7 @@ using namespace std;
 typedef unsigned char byte;
 
 string bar = "           |----+----|----+----|----+----|----+----|----+----|----+----|----+----|----+----\n";
+string menuOptions = "\nMenu:\n1) List Directory\n2) Copy file to disk\n3) Delete file\n4) Rename a file\n5) Usage map\n6) Directory dump\n7) FAT dump\n8) FAT chain\n9) Sector dump\n10) Quit\n> ";
 
 struct MainMemory{
     byte memArray[BYTECOUNT]; // 0-511 is for the boot partition
@@ -88,11 +89,46 @@ int main(){
     }
     printf("%d", memory.findFreeMemory());*/
     loadSystem();
-    memory.print();
     initializeFAT();
+    int answer;
+    do{
+        cout << menuOptions;
+        cin >> answer;
+        switch(answer){
+            case 1:
+                //something
+                break;
+            case 2:
+                //something
+                break;
+            case 3:
+                //something
+                break;
+            case 4:
+                //something
+                break;
+            case 5:
+                //something
+                break;
+            case 6:
+                //something
+                break;
+            case 7:
+                //something
+                break;
+            case 8:
+                //something
+                break;
+            case 9:
+                //something
+                break;
+            default:
+                return 0;
+        }
+    }
+    while(answer >= 1 && answer <= 9);
+    memory.print();
     printFAT();
-    short a = 0xFF7; 
-    cout << "a = " << a << endl;
     //Entry e = {0, 11, 63};
     //printf("%d\n", e.b);
     //printf("%d\n", e.c);
