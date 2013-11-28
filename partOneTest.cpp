@@ -8,7 +8,7 @@
 
 #include<iostream>
 #include<fstream>
-#include<deque>
+//#include<deque>
 #include<cstdlib>
 #define BYTECOUNT 1474560
 #define BEGIN_BYTE_ENTRY 16896
@@ -46,7 +46,7 @@ struct FileTable
 };
 
 MainMemory memory;
-deque<int> freeSectors;
+//deque<int> freeSectors;
 
 void loadSystem();
 int main(){
@@ -73,6 +73,10 @@ int main(){
     printf("%d", memory.findFreeMemory());*/
     loadSystem();
     memory.print();
+    Entry e = {0, 11, 63};
+    printf("%d\n", e.b);
+    printf("%d\n", e.c);
+    printf("%d\n", (e.b << 8) + e.c);
     /*memory.findFreeSector();
 	for (uint i = 0; i < freeSectors.size(); i++)
 	{
@@ -106,7 +110,7 @@ MainMemory::MainMemory()
 }
 
 void MainMemory::findFreeSector(){
-	int sector = 33;
+	/*int sector = 33;
 	bool empty;
     for (int i = BEGIN_BYTE_ENTRY; i < BYTECOUNT; )
     {
@@ -125,7 +129,7 @@ void MainMemory::findFreeSector(){
 		}
 		sector++;
 		i += SECTOR_SIZE;
-	}
+	}*/
 	
 }
 
