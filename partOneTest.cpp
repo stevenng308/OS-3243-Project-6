@@ -86,6 +86,7 @@ short getEntry(short pos);
 void insertFile(File &f, int start);
 void createFile(byte n, byte e, byte a, ushort r, ushort ct, ushort cd, ushort lad, ushort i, ushort lmt, ushort lmd, ushort fls, ushort s);
 void copyFileToDisk();
+int findEmptyDirectory();
 
 
 int main(){
@@ -257,6 +258,14 @@ void createFile(byte n[8], byte e[3], byte a, ushort r, ushort ct, ushort cd, us
 	
 	int startIndex = FIRST_FILE_BYTE;
 	insertFile(myFile, startIndex);
+}
+
+int findEmptyDirectory(){
+    for(int i = FIRST_FILE_BYTE; i < BEGIN_BYTE_ENTRY; i+= 32){
+        if(memory.memArray[i] == 0xE5 || memory.memArray[i] == 0x00){
+            return i;
+        }
+    }
 }
 
 void initializeFAT(){
