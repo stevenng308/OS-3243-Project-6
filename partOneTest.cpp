@@ -9,6 +9,8 @@
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
+#include <math.h>
+#include <stdio.h>
 #define BYTECOUNT 1474560
 #define BEGIN_BYTE_ENTRY 16896
 #define SECTOR_SIZE 512
@@ -27,7 +29,7 @@ using namespace std;
 typedef unsigned char byte;
 
 string bar = "           |----+----|----+----|----+----|----+----|----+----|----+----|----+----|----+----\n";
-string menuOptions = "\nMenu:\n1) List Directory\n2) Copy file to disk\n3) Delete file\n4) Rename a file\n5) Usage map\n6) Directory dump\n7) FAT dump\n8) FAT chain\n9) Sector dump\n10) Quit\n> ";
+string menuOptions = "\nMenu:\n1) List Directory\n2) Copy file to disk\n3) Delete file\n4) Rename a file\n5) Usage map\n6) Directory dump\n7) FAT dump\n8) FAT chain\n9) Sector dump\n0) Quit\n> ";
 int freeFatEntries = MAX_FAT_ENTRY + 1 - 2; // added 1 to get quantity, subtract 2 since entries 0 and 1 are reserved
 
 struct MainMemory{
@@ -91,6 +93,7 @@ void copyFileToDisk();
 int findEmptyDirectory();
 ushort getCurrDate();
 ushort getCurrTime();
+ushort setFatChain(ushort fls, int size);
 
 
 int main(){
@@ -126,7 +129,6 @@ int main(){
                 //something
                 break;
             case 2:
-                // Ask for name of file from user
                 copyFileToDisk();
                 break;
             case 3:
@@ -219,6 +221,51 @@ void insertFile(File &f, int start)
 	memory.memArray[start + 29] = (f.size & 0xFF0000) >> 16;
 	memory.memArray[start + 30] = (f.size & 0xFF00) >> 8;
 	memory.memArray[start + 31] = f.size & 0xFF;
+
+    // This part actual copies the file to the disk, 1 sector at a time
+    // First get the file name
+    string fHandle = "";
+    for(int i = 0; i < 8; i++){
+        if(f.name[i] != ' ')
+            fHandle += f.name[i];
+    }
+    fHandle += '.';
+    for(int i = 0; i < 3; i++){
+        if(f.ext[i] != ' ')
+            fHandle += f.ext[i];
+    }
+    // Open the file
+    ifstream iFile(fHandle.c_str());
+    // Create pointer to read buffer for file
+    filebuf* fbuf = iFile.rdbuf();
+    // Create character array for entire file
+    char* buffer=new char[f.size];
+    // Get data from whole file at once
+    fbuf->sgetn (buffer,f.size);
+    // Close file
+    iFile.close();
+    // Alright now that the whole file is here in memory, no more disk IO
+    // Start a for loop that copies file into correct sectors, 1 sector at a time.
+    ushort startSector = f.firstLogicalSector;
+    int startByte = (startSector + 33 - 2) * 512; 
+    for(int i = 0; i < ceil((double)f.size/512.0); i++){
+        for(int j = 0; j < 512; j++){
+            if(i*512+j < f.size)
+                memory.memArray[startByte+j] = buffer[i*512+j];
+            if(j==511 && i*512+j < f.size){ // we'll need to move to the next sector in the chain
+                startSector = getEntry(startSector);
+                startByte = (startSector + 33 - 2) * 512;
+            }
+        }
+    }
+    // Free the memory once used by the buffer
+    for(int i = 0; i < f.size; i++){
+        printf("%02x ",buffer[i]);
+    }
+    cout << endl;
+    delete[] buffer;
+    // I'm still working on this method to get it to print the right stuff. This is only the buffer
+    // , so next, i'm going to check the actual bytes in the memory array
 }
 
 void copyFileToDisk(){
@@ -242,8 +289,19 @@ void copyFileToDisk(){
     cin >> fHandle;
     extension = fHandle.substr(fHandle.find(".")+1,3);
     fName = fHandle.substr(0,fHandle.find("."));
+    fHandle = fName+'.'+extension;
     ifstream iFile(fHandle.c_str());
-    if(iFile.good()){
+    if(iFile.good() && fName.length() < 9){
+        unsigned k = 8 - fName.length(), j = 0; 
+        for(;k < 8; ++k, ++j){
+            if(j < fName.length())
+                n[k] = fName.at(j);
+        }
+        k = 3 - extension.length(), j = 0;
+        for(;k < 3; ++k, ++j){
+            if(j < extension.length())
+                e[k] = extension.at(j);
+        }
         long start,finish;
         start = iFile.tellg();
         iFile.seekg (0, ios::end);
@@ -257,6 +315,8 @@ void copyFileToDisk(){
         else
             cout << "\nError: Not enough space on disk for the file...\n";
     }
+    else
+        cout << "Bad File...\n";
 }
 
 ushort getCurrDate(){
@@ -301,9 +361,23 @@ void createFile(byte n[8], byte e[3], byte a, ushort r, ushort ct, ushort cd, us
 	myFile.lastModfiyDate = lmd;
 	myFile.firstLogicalSector = fls;
 	myFile.size = s;
-	
+    setEntry(fls,setFatChain(fls,s)); // set up the FAT chain for this file
 	int startIndex = findEmptyDirectory();
 	insertFile(myFile, startIndex);
+}
+
+/**
+* Recursively finds free FAT entries to add to the chain for this file
+* param fls the FAT entry short where we begin
+* param size the size of the file, or what's left of it at this point
+*/
+ushort setFatChain(ushort fls, int size){
+    int count = size - 512;
+    if(count > 0){ // more bytes left in file
+        return setFatChain(fls,count);  
+    }
+    else // this is last FAT entry for the file
+        return 0xFFF; // end recursion
 }
 
 int findEmptyDirectory(){
@@ -395,9 +469,9 @@ short getEntry(short pos){
 
 short findFreeFat()
 {
-	for (int i = FIRST_FAT_BYTE; i <= MAX_FAT_ENTRY; i++)
+    for (int i = 2; i <= MAX_FAT_ENTRY; i++)
 	{
-		if (memory.memArray[i] == 0)
+		if (getEntry(i) == 0)
 		{
 			return i;
 		}
