@@ -12,10 +12,10 @@
 #define BYTECOUNT 1474560
 #define BEGIN_BYTE_ENTRY 16896
 #define SECTOR_SIZE 512
-#define MAX_FAT_ENTRY 2848 //2879 - 33 = 2846 + 2 reserved = 2848
+#define MAX_FAT_ENTRY 2848 // 2879 - 33 + 1 = 2847 + 2 reserved = 2849 (entries from 0 to 2848 inclusive, 0 and 1 reserved)
 #define START_FAT 2
 #define FIRST_FAT_BYTE 512
-#define FAT_SIZE 4608 //going to have to rethink the limits on FAT size. I am getting different #. 5119 is the last spot for the last entry in FAT table.
+#define FAT_SIZE 4608 // (bytes)
 #define LAST_INVALID_ENTRY 3071 // first invalid entry is 2849
 #define FIRST_FILE_BYTE 9728
 #define FILE_ENTRY_SIZE 32
@@ -28,6 +28,7 @@ typedef unsigned char byte;
 
 string bar = "           |----+----|----+----|----+----|----+----|----+----|----+----|----+----|----+----\n";
 string menuOptions = "\nMenu:\n1) List Directory\n2) Copy file to disk\n3) Delete file\n4) Rename a file\n5) Usage map\n6) Directory dump\n7) FAT dump\n8) FAT chain\n9) Sector dump\n10) Quit\n> ";
+int freeFatEntries = MAX_FAT_ENTRY + 1 - 2; // added 1 to get quantity, subtract 2 since entries 0 and 1 are reserved
 
 struct MainMemory{
     byte memArray[BYTECOUNT]; // 0-511 is for the boot partition
@@ -249,8 +250,12 @@ void copyFileToDisk(){
         finish = iFile.tellg();
         iFile.close();
         int s = (finish-start) & 0xFFFF;
-        createFile(n,e,a,r,ct,cd,lad,i,lmt,lmd,fls,s);
-        //printf("\nsize of '%s' : %db\n",fHandle.c_str(),s);
+        if(s <= freeFatEntries * 512){
+            createFile(n,e,a,r,ct,cd,lad,i,lmt,lmd,fls,s);
+            //printf("\nsize of '%s' : %db\n",fHandle.c_str(),s);
+        }
+        else
+            cout << "\nError: Not enough space on disk for the file...\n";
     }
 }
 
