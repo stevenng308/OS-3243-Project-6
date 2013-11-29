@@ -6,10 +6,9 @@
 // File: partone.cpp
 
 
-#include<iostream>
-#include<fstream>
-//#include<deque>
-#include<cstdlib>
+#include <iostream>
+#include <fstream>
+#include <cstdlib>
 #define BYTECOUNT 1474560
 #define BEGIN_BYTE_ENTRY 16896
 #define SECTOR_SIZE 512
@@ -20,6 +19,7 @@
 #define LAST_INVALID_ENTRY 3071 // first invalid entry is 2849
 #define FIRST_FILE_BYTE 9728
 #define FILE_ENTRY_SIZE 32
+
 using namespace std;
 
 // Define Structs
@@ -56,7 +56,6 @@ struct File
 	File(); 
 };
 
-
 // Since we can access the FAT directly, there may be no need for these extra structs
 /**
 struct Entry
@@ -86,9 +85,11 @@ void printFAT();
 short getEntry(short pos);
 short findFreeFat();
 void insertFile(File &f, int start);
-void createFile(byte n, byte e, byte a, ushort r, ushort ct, ushort cd, ushort lad, ushort i, ushort lmt, ushort lmd, ushort fls, ushort s);
+void createFile(byte n[8], byte e[3], byte a, ushort r, ushort ct, ushort cd, ushort lad, ushort i, ushort lmt, ushort lmd, ushort fls, int s);
 void copyFileToDisk();
 int findEmptyDirectory();
+ushort getCurrDate();
+ushort getCurrTime();
 
 
 int main(){
@@ -220,6 +221,19 @@ void insertFile(File &f, int start)
 }
 
 void copyFileToDisk(){
+    // These 11 following variables and 's' at the bottom will be passed to the createFile method
+    byte n[8];
+    byte e[3];
+    byte a = 0;
+    ushort r = 0;
+    ushort ct = getCurrTime();
+    ushort cd = getCurrDate();
+    ushort lad = cd;
+    ushort i = 0;
+    ushort lmt = ct;
+    ushort lmd = cd;
+    ushort fls = findFreeFat(); // These 11 
+
     string fHandle;
     string fName;
     string extension;
@@ -227,11 +241,35 @@ void copyFileToDisk(){
     cin >> fHandle;
     extension = fHandle.substr(fHandle.find(".")+1,3);
     fName = fHandle.substr(0,fHandle.find("."));
-    cout << "\nfile name = " << fName << endl;
-    cout << "extension = " << extension << endl;
-     
+    ifstream iFile(fHandle.c_str());
+    if(iFile.good()){
+        long start,finish;
+        start = iFile.tellg();
+        iFile.seekg (0, ios::end);
+        finish = iFile.tellg();
+        iFile.close();
+        int s = (finish-start) & 0xFFFF;
+        createFile(n,e,a,r,ct,cd,lad,i,lmt,lmd,fls,s);
+        //printf("\nsize of '%s' : %db\n",fHandle.c_str(),s);
+    }
+}
 
+ushort getCurrDate(){
+    ushort result = 0;
+    struct tm cd;
+    result |= ((cd.tm_mday & 0x1F) << 11); // Day of month goes first (1-31)
+    result |= ((cd.tm_mon & 0x0F) << 7); // then comes the month since January
+    result |= (cd.tm_year & 0x7F); // and finally the year since 1990
+    return result;
+}
 
+ushort getCurrTime(){
+    ushort result = 0; 
+    struct tm cd;
+    result |= ((cd.tm_hour & 0x1F) << 11); // Hour of day comes first (0-23)
+    result |= ((cd.tm_min & 0x3F) << 7); // then comes the minutes after the hour (0-59)
+    result |= (cd.tm_sec%30 & 0x1F); // and finally the number pair of seconds (0-29)
+    return result;
 }
 
 void createFile(byte n[8], byte e[3], byte a, ushort r, ushort ct, ushort cd, ushort lad, ushort i, ushort lmt, ushort lmd, ushort fls, int s)
