@@ -54,7 +54,7 @@ struct File
 	ushort lastModifyTime;
 	ushort lastModfiyDate;
 	ushort firstLogicalSector;
-	int size;
+	uint size;
 	
 	File(); 
 };
@@ -88,7 +88,7 @@ void printFAT();
 short getEntry(short pos);
 short findFreeFat();
 void insertFile(File &f, int start);
-void createFile(byte n[8], byte e[3], byte a, ushort r, ushort ct, ushort cd, ushort lad, ushort i, ushort lmt, ushort lmd, ushort fls, int s);
+void createFile(byte n[8], byte e[3], byte a, ushort r, ushort ct, ushort cd, ushort lad, ushort i, ushort lmt, ushort lmd, ushort fls, uint s);
 void copyFileToDisk();
 int findEmptyDirectory();
 ushort getCurrDate();
@@ -159,16 +159,6 @@ int main(){
     while(answer >= 1 && answer <= 9);
     memory.print();
     printFAT();
-    //Entry e = {0, 11, 63};
-    //printf("%d\n", e.b);
-    //printf("%d\n", e.c);
-    //printf("%d\n", (e.b << 8) + e.c);
-    /*memory.findFreeSector();
-	for (uint i = 0; i < freeSectors.size(); i++)
-	{
-		printf("%d", freeSectors[i]);
-		printf("\n");
-	}*/
     return 0;
 }
 
@@ -248,8 +238,8 @@ void insertFile(File &f, int start)
     // Start a for loop that copies file into correct sectors, 1 sector at a time.
     ushort startSector = f.firstLogicalSector;
     int startByte = (startSector + 33 - 2) * 512; 
-    for(int i = 0; i < ceil((double)f.size/512.0); i++){
-        for(int j = 0; j < 512; j++){
+    for(uint i = 0; i < ceil((double)f.size/512.0); i++){
+        for(uint j = 0; j < 512; j++){
             if(i*512+j < f.size)
                 memory.memArray[startByte+j] = buffer[i*512+j];
             if(j==511 && i*512+j < f.size){ // we'll need to move to the next sector in the chain
@@ -259,7 +249,7 @@ void insertFile(File &f, int start)
         }
     }
     // Free the memory once used by the buffer
-    for(int i = 0; i < f.size; i++){
+    for(uint i = 0; i < f.size; i++){
         printf("%02x ",buffer[i]);
     }
     cout << endl;
@@ -337,7 +327,7 @@ ushort getCurrTime(){
     return result;
 }
 
-void createFile(byte n[8], byte e[3], byte a, ushort r, ushort ct, ushort cd, ushort lad, ushort i, ushort lmt, ushort lmd, ushort fls, int s)
+void createFile(byte n[8], byte e[3], byte a, ushort r, ushort ct, ushort cd, ushort lad, ushort i, ushort lmt, ushort lmd, ushort fls, uint s)
 {
 	File myFile;
 	myFile.name[0] = n[0];
