@@ -64,7 +64,8 @@ struct Entry
 	char a : 8;
 	char b : 8;
 	char c : 8;
-};
+};/create
+
 
 struct FileTable
 {
@@ -248,6 +249,7 @@ void createFile(byte n[8], byte e[3], byte a, ushort r, ushort ct, ushort cd, us
 	myFile.ext[1] = e[1];
 	myFile.ext[2] = e[2];
 	myFile.attr = a;
+    myFile.reserved = r;
 	myFile.createTime = ct;
 	myFile.createDate = cd;
 	myFile.lastAccessDate = lad;
@@ -257,7 +259,7 @@ void createFile(byte n[8], byte e[3], byte a, ushort r, ushort ct, ushort cd, us
 	myFile.firstLogicalSector = fls;
 	myFile.size = s;
 	
-	int startIndex = FIRST_FILE_BYTE;
+	int startIndex = findEmptyDirectory();
 	insertFile(myFile, startIndex);
 }
 
