@@ -80,9 +80,10 @@ MainMemory memory;
 // Declare Methods
 void loadSystem();
 void initializeFAT();
-void setEntry(short pos, short val);
+void setEntry(short pos, short val);.
 void printFAT();
 short getEntry(short pos);
+short findFreeFat();
 void insertFile(File &f, int start);
 void createFile(byte n, byte e, byte a, ushort r, ushort ct, ushort cd, ushort lad, ushort i, ushort lmt, ushort lmd, ushort fls, ushort s);
 void copyFileToDisk();
@@ -344,6 +345,18 @@ short getEntry(short pos){
     else{ // requesting a high-order entry
         return (memory.memArray[start + 2] << 4) + (memory.memArray[start + 1] >> 4);
     }
+}
+
+short findFreeFat()
+{
+	for (int i = FIRST_FAT_BYTE; i < MAX_FAT_ENTRY; i++)
+	{
+		if (memory.memArray[i] == 0)
+		{
+			return i;
+		}
+	}
+	return -1;
 }
 
 MainMemory::MainMemory()
