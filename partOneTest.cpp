@@ -80,7 +80,7 @@ MainMemory memory;
 // Declare Methods
 void loadSystem();
 void initializeFAT();
-void setEntry(short pos, short val);.
+void setEntry(short pos, short val);
 void printFAT();
 short getEntry(short pos);
 short findFreeFat();
@@ -267,6 +267,7 @@ int findEmptyDirectory(){
             return i;
         }
     }
+    return -1;
 }
 
 void initializeFAT(){
@@ -349,7 +350,7 @@ short getEntry(short pos){
 
 short findFreeFat()
 {
-	for (int i = FIRST_FAT_BYTE; i < MAX_FAT_ENTRY; i++)
+	for (int i = FIRST_FAT_BYTE; i <= MAX_FAT_ENTRY; i++)
 	{
 		if (memory.memArray[i] == 0)
 		{
