@@ -85,6 +85,7 @@ void printFAT();
 short getEntry(short pos);
 void insertFile(File &f, int start);
 void createFile(byte n, byte e, byte a, ushort r, ushort ct, ushort cd, ushort lad, ushort i, ushort lmt, ushort lmd, ushort fls, ushort s);
+void copyFileToDisk();
 
 
 int main(){
@@ -120,7 +121,8 @@ int main(){
                 //something
                 break;
             case 2:
-                //something
+                // Ask for name of file from user
+                copyFileToDisk();
                 break;
             case 3:
                 //something
@@ -212,6 +214,21 @@ void insertFile(File &f, int start)
 	memory.memArray[start + 29] = f.size & 0xFF00;
 	memory.memArray[start + 30] = f.size & 0xFF0000;
 	memory.memArray[start + 31] = f.size & 0xFF000000;
+}
+
+void copyFileToDisk(){
+    string fHandle;
+    string fName;
+    string extension;
+    cout << "Filename to copy to the simulated disk: ";
+    cin >> fHandle;
+    extension = fHandle.substr(fHandle.find(".")+1,3);
+    fName = fHandle.substr(0,fHandle.find("."));
+    cout << "\nfile name = " << fName << endl;
+    cout << "extension = " << extension << endl;
+     
+
+
 }
 
 void createFile(byte n[8], byte e[3], byte a, ushort r, ushort ct, ushort cd, ushort lad, ushort i, ushort lmt, ushort lmd, ushort fls, int s)
