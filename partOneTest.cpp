@@ -196,26 +196,26 @@ void insertFile(File &f, int start)
 	memory.memArray[start + 9] = f.ext[1];
 	memory.memArray[start + 10] = f.ext[2];
 	memory.memArray[start + 11] = f.attr;
-	memory.memArray[start + 12] = f.reserved & 0xFF;
-	memory.memArray[start + 13] = f.reserved >> 8;
-	memory.memArray[start + 14] = f.createTime & 0xFF;
-	memory.memArray[start + 15] = f.createTime >> 8;
-	memory.memArray[start + 16] = f.createDate & 0xFF;
-	memory.memArray[start + 17] = f.createDate >> 8;
-	memory.memArray[start + 18] = f.lastAccessDate & 0xFF;
-	memory.memArray[start + 19] = f.lastAccessDate >> 8;
-	memory.memArray[start + 20] = f.ignore & 0xFF;
-	memory.memArray[start + 21] = f.ignore >> 8;
-	memory.memArray[start + 22] = f.lastModifyTime & 0xFF;
-	memory.memArray[start + 23] = f.lastModifyTime >> 8;
-	memory.memArray[start + 24] = f.lastModfiyDate & 0xFF;
-	memory.memArray[start + 25] = f.lastModfiyDate >> 8;
-	memory.memArray[start + 26] = f.firstLogicalSector & 0xFF;
-	memory.memArray[start + 27] = f.firstLogicalSector >> 8;
-	memory.memArray[start + 28] = f.size & 0xFF;
-	memory.memArray[start + 29] = f.size & 0xFF00;
-	memory.memArray[start + 30] = f.size & 0xFF0000;
-	memory.memArray[start + 31] = f.size & 0xFF000000;
+	memory.memArray[start + 12] = f.reserved >> 8;
+	memory.memArray[start + 13] = f.reserved & 0xFF;
+	memory.memArray[start + 14] = f.createTime >> 8;
+	memory.memArray[start + 15] = f.createTime & 0xFF;
+	memory.memArray[start + 16] = f.createDate >> 8;
+	memory.memArray[start + 17] = f.createDate & 0xFF;
+	memory.memArray[start + 18] = f.lastAccessDate >> 8;
+	memory.memArray[start + 19] = f.lastAccessDate & 0xFF;
+	memory.memArray[start + 20] = f.ignore >> 8;
+	memory.memArray[start + 21] = f.ignore & 0xFF;
+	memory.memArray[start + 22] = f.lastModifyTime >> 8;
+	memory.memArray[start + 23] = f.lastModifyTime & 0xFF;
+	memory.memArray[start + 24] = f.lastModfiyDate >> 8;
+	memory.memArray[start + 25] = f.lastModfiyDate & 0xFF;
+	memory.memArray[start + 26] = f.firstLogicalSector >> 8;
+	memory.memArray[start + 27] = f.firstLogicalSector & 0xFF;
+	memory.memArray[start + 28] = (f.size & 0xFF000000) >> 24;
+	memory.memArray[start + 29] = (f.size & 0xFF0000) >> 16;
+	memory.memArray[start + 30] = (f.size & 0xFF00) >> 8;
+	memory.memArray[start + 31] = f.size & 0xFF;
 }
 
 void copyFileToDisk(){
