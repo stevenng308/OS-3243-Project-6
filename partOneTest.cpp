@@ -51,7 +51,7 @@ struct File
 	ushort lastModifyTime;
 	ushort lastModfiyDate;
 	ushort firstLogicalSector;
-	float size;
+	int size;
 	
 	File(); 
 };
@@ -83,7 +83,7 @@ void initializeFAT();
 void setEntry(short pos, short val);
 void printFAT();
 short getEntry(short pos);
-void initializeDirectory();
+void insertFile(File &f, int start);
 void createFile(byte n, byte e, byte a, ushort r, ushort ct, ushort cd, ushort lad, ushort i, ushort lmt, ushort lmd, ushort fls, ushort s);
 
 
@@ -178,29 +178,61 @@ void loadSystem()
 	}
 }
 
-void initializeDirectory()
+void insertFile(File &f, int start)
 {
-	File root;
-	for (int i = FIRST_FILE_BYTE; i < FIRST_FILE_BYTE + FILE_ENTRY_SIZE; i++)
-	{
-		if (i < 8)
-		{
-			memory.memArray[i] = root.name[i];
-		}
-		else if (i < 11)
-		{
-			memory.memArray[i] = root.ext[i - 8];
-		}
-		else if (i > 11)
-		{
-			memory.memArray[i] = 0;
-		}
-		else
-		{
-			memory.memArray[i] = root.attr;
-		}
-	}
+	memory.memArray[start] = f.name[0];
+	memory.memArray[start + 1] = f.name[1];
+	memory.memArray[start + 2] = f.name[2];
+	memory.memArray[start + 3] = f.name[3];
+	memory.memArray[start + 4] = f.name[4];
+	memory.memArray[start + 5] = f.name[5];
+	memory.memArray[start + 6] = f.name[6];
+	memory.memArray[start + 7] = f.name[7];
+	memory.memArray[start + 8] = f.ext[0];
+	memory.memArray[start + 9] = f.ext[1];
+	memory.memArray[start + 10] = f.ext[2];
+	memory.memArray[start + 11] = f.attr;
+	memory.memArray[start + 12] = f.reserved & 0xFF;
+	memory.memArray[start + 13] = f.reserved >> 8;
+	memory.memArray[start + 14] = f.createTime & 0xFF;
+	memory.memArray[start + 15] = f.createTime >> 8;
+	memory.memArray[start + 16] = f.createDate & 0xFF;
+	memory.memArray[start + 17] = f.createDate >> 8;
+	memory.memArray[start + 18] = f.lastAccessDate & 0xFF;
+	memory.memArray[start + 19] = f.lastAccessDate >> 8;
+	memory.memArray[start + 20] = f.ignore & 0xFF;
+	memory.memArray[start + 21] = f.ignore >> 8;
+	memory.memArray[start + 22] = f.lastModifyTime & 0xFF;
+	memory.memArray[start + 23] = f.lastModifyTime >> 8;
+	memory.memArray[start + 24] = f.lastModfiyDate & 0xFF;
+	memory.memArray[start + 25] = f.lastModfiyDate >> 8;
+	memory.memArray[start + 26] = f.firstLogicalSector & 0xFF;
+	memory.memArray[start + 27] = f.firstLogicalSector >> 8;
+	memory.memArray[start + 28] = f.size & 0xFF;
+	memory.memArray[start + 29] = f.size & 0xFF00;
+	memory.memArray[start + 30] = f.size & 0xFF0000;
+	memory.memArray[start + 31] = f.size & 0xFF000000;
 }
+
+void createFile(byte n[8], byte e, byte a, ushort r, ushort ct, ushort cd, ushort lad, ushort i, ushort lmt, ushort lmd, ushort fls, int s)
+{
+	File myFile;
+	//char *c = n[0];
+	myFile.name[0] = n[0];
+	myFile.attr = a;
+	myFile.createTime = ct;
+	myFile.createDate = cd;
+	myFile.lastAccessDate = lad;
+	myFile.ignore = i;
+	myFile.lastModifyTime = lmt;
+	myFile.lastModfiyDate = lmd;
+	myFile.firstLogicalSector = fls;
+	myFile.size = s;
+	
+	int startIndex = FIRST_FILE_BYTE;
+	insertFile(myFile, startIndex);
+}
+
 void initializeFAT(){
     setEntry(0, 0xFF0);
     setEntry(1, 0xFF1);
