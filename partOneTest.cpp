@@ -214,11 +214,20 @@ void insertFile(File &f, int start)
 	memory.memArray[start + 31] = f.size & 0xFF000000;
 }
 
-void createFile(byte n[8], byte e, byte a, ushort r, ushort ct, ushort cd, ushort lad, ushort i, ushort lmt, ushort lmd, ushort fls, int s)
+void createFile(byte n[8], byte e[3], byte a, ushort r, ushort ct, ushort cd, ushort lad, ushort i, ushort lmt, ushort lmd, ushort fls, int s)
 {
 	File myFile;
-	//char *c = n[0];
 	myFile.name[0] = n[0];
+	myFile.name[1] = n[1];
+	myFile.name[2] = n[2];
+	myFile.name[3] = n[3];
+	myFile.name[4] = n[4];
+	myFile.name[5] = n[5];
+	myFile.name[6] = n[6];
+	myFile.name[7] = n[7];
+	myFile.ext[0] = e[0];
+	myFile.ext[1] = e[1];
+	myFile.ext[2] = e[2];
 	myFile.attr = a;
 	myFile.createTime = ct;
 	myFile.createDate = cd;
