@@ -157,13 +157,14 @@ int main(){
     return 0;
 }
 
+/**
+* Loads the boot sector onto the disk from the file 'fdd.flp' residing in the current working directory of
+* this program.  
+*/
 void loadSystem()
 {
 	ifstream ifile("fdd.flp",std::ifstream::in);
     byte b = ifile.get();
-
-    //byte copiedFile
-
     int c = 0;
     while (ifile.good()){
 		memory.memArray[c] = b; 
@@ -172,6 +173,10 @@ void loadSystem()
 	}
 }
 
+/**
+* Adds the file directory to the root directory all bytes from the file to the disk in the correct sectors 
+* specified in the FAT chain for this file.
+*/
 void insertFile(File &f, int start)
 {
 	memory.memArray[start] = f.name[0];
@@ -242,7 +247,6 @@ void insertFile(File &f, int start)
         }
     }
     ifile.close();
-    //cout << "number of bytes copied to disk: " << filesize << endl;
 }
 
 /**
@@ -261,6 +265,9 @@ void setFirstDirectoryBytes(){
     }
 }
 
+/**
+* Prints the root directory to the screen for the user to see. Includes all file directories in the root directory. 
+*/
 void directoryDump(){
     setFirstDirectoryBytes(); // first ensure that the first byte of each possible directory is set
     cout << "\nROOT DIRECTORY:\n";
@@ -291,6 +298,10 @@ void directoryDump(){
 
 }
 
+/**
+* Takes a filename specified by the user, looks for the file, and if valid, copies the file to the disk using the least amount
+* of FAT table entries -> least number of sectors on disk, and creates directory for it in the root directory
+*/
 void copyFileToDisk(){
     // These 11 following variables and 's' at the bottom will be passed to the createFile method
     byte n[8];
@@ -345,6 +356,11 @@ void copyFileToDisk(){
         cout << "Bad file name...\n";
 }
 
+/**
+* Method that deletes a file from the disk ->> does not clear all used bytes on disk. Only clears all FAT table entries 
+* so they can be used by newly added files, and sets the first byte in the directory to 0xE5 so it can be overwritten by 
+* new files being added to the root directory.
+*/
 void deleteFile(){
     // Get name of file to delete
     string fHandle;
@@ -402,6 +418,9 @@ void deleteFile(){
         cout << "File not found\n";
 }
 
+/**
+* Renames a file that currently resides on disk
+*/
 void renameFile(){
     string fHandle;
     cout << "\nFilename to rename: ";
@@ -443,6 +462,11 @@ void renameFile(){
         cout << "File not found\n";
 }
 
+
+/**
+* Clears the FAT chain so it can be reused by another file being added to disk
+* param a the beginning FAT entry where we will start
+*/
 void freeFatChain(ushort a){
     if(a != 0xFFF){
         // while we stil have a pointer to the referenced FAT entry, call freeFatChain on it
@@ -507,6 +531,11 @@ int getDirectoryByte(string str){
     return found;
 }
 
+/**
+* Returns an unsigned short representing the current date
+* the byte schema is the following: 15 14 13 12 11 10 09 08 07 06 05 04 03 02 01 00
+*                                    D  D  D  D  D  M  M  M  M  Y  Y  Y  Y  Y  Y  Y
+*/
 ushort getCurrDate(){
     ushort result = 0;
     struct tm cd;
@@ -516,6 +545,11 @@ ushort getCurrDate(){
     return result;
 }
 
+/**
+* Returns an unsigned short representing the current time
+* the byte schema is the following: 15 14 13 12 11 10 09 08 07 06 05 04 03 02 01 00
+*                                    H  H  H  H  H  M  M  M  M  M  M  S  S  S  S  S
+*/
 ushort getCurrTime(){
     ushort result = 0; 
     struct tm ct;
@@ -525,6 +559,9 @@ ushort getCurrTime(){
     return result;
 }
 
+/**
+* Creates a file based on the parameters that will be eventually copied to the disk
+*/ 
 void createFile(byte n[8], byte e[3], byte a, ushort r, ushort ct, ushort cd, ushort lad, ushort i, ushort lmt, ushort lmd, ushort fls, uint s)
 {
 	File myFile;
@@ -571,6 +608,10 @@ ushort setFatChain(ushort pos, int size){
         return 0xFFF;
 }
 
+/**
+* Method that returns the position of the first byte of the first available directory entry 
+* that we can use to enter a new directory
+*/
 int findEmptyDirectory(){
     for(int i = FIRST_FILE_BYTE; i < BEGIN_BYTE_ENTRY; i+= 32){
         if(memory.memArray[i] == 0xE5 || memory.memArray[i] == 0x00){
@@ -580,6 +621,10 @@ int findEmptyDirectory(){
     return -1;
 }
 
+/**
+* Method that sets first two FAT entries as specified in assignment, assigns all valid entries to 0x00,
+* and assigns all invalid entries that do no represent physical sectors on disk to 0xFF7 (bad sector)
+*/
 void initializeFAT(){
     setEntry(0, 0xFF0);
     setEntry(1, 0xFF1);
@@ -640,6 +685,9 @@ void fatDump(){
     cout << endl;
 }
 
+/**
+* Method to list the FAT chain for the user-specified filename, if file resides on disk.
+*/
 void listFatChain(){
     string fHandle;
     cout << "\nFilename for which to list allocated sectors: "; 
@@ -661,7 +709,12 @@ void listFatChain(){
         cout << "File not found\n";
 }
 
-// Option #9 Print a sector to the screen 
+/** 
+* Method used to print all 512 bytes of a user-specified sector to the screen.
+* Also prints the character representation of those bytes. In order to preserve order
+* in the output, non-printable characters will be substituted by spaces in the 
+* character representation on the right-hand side of the output.
+*/
 void sectorDump(){
     int sector;
     cout << "\nSelect physical sector to display: ";
@@ -685,7 +738,7 @@ void sectorDump(){
                 if(memory.memArray[secByte+i+j] > 31 && memory.memArray[secByte+i+j] < 127)   
                     printf("%c",memory.memArray[secByte+i+j]); // printable character
                 else
-                    printf(" ");
+                    printf(" "); // non-printable character
             }
             else
                 printf(" "); // fill spaces for output be aligned correctly
@@ -694,6 +747,11 @@ void sectorDump(){
     }
 }
 
+/**
+* Method that returns an updated vector that represents all FAT entries that point to
+* the sectors used by a file. This vector is used to print those logical sectors and 
+* their physical counterparts to the screen.
+*/
 vector<ushort> printFatChain(ushort num){ 
     vector<ushort> vec;
     if(num != 0xFFF){
@@ -749,6 +807,7 @@ MainMemory::MainMemory()
 	}*/
 }
 
+// I think this method is no longer needed since we can use the findFreeFat method above
 void MainMemory::findFreeSector(){
 	/*int sector = 33;
 	bool empty;
