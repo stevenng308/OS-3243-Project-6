@@ -60,23 +60,6 @@ struct File
 	File(); 
 };
 
-// Since we can access the FAT directly, there may be no need for these extra structs
-/**
-struct Entry
-{
-	char a : 8;
-	char b : 8;
-	char c : 8;
-};/create
-
-
-struct FileTable
-{
-	Entry table[MAX_FAT_ENTRY];
-};*/
-
-
-
 MainMemory memory;
 //deque<int> freeSectors;
 
@@ -90,11 +73,15 @@ ushort getEntry(ushort pos);
 ushort findFreeFat(ushort a);
 void insertFile(File &f, int start);
 void createFile(byte n[8], byte e[3], byte a, ushort r, ushort ct, ushort cd, ushort lad, ushort i, ushort lmt, ushort lmd, ushort fls, uint s);
-void copyFileToDisk();
 int findEmptyDirectory();
 ushort getCurrDate();
 ushort getCurrTime();
 ushort setFatChain(ushort pos, int size);
+void setFirstDirectoryBytes();
+
+// Requested User Options
+void directoryDump();
+void copyFileToDisk();
 
 
 int main(){
@@ -143,10 +130,10 @@ int main(){
                 //something
                 break;
             case 6:
-                //something
+                directoryDump();
                 break;
             case 7:
-                //something
+                printFAT();
                 break;
             case 8:
                 //something
@@ -181,7 +168,6 @@ void loadSystem()
 
 void insertFile(File &f, int start)
 {
-    cout << "begin updating file bytes\n";
 	memory.memArray[start] = f.name[0];
 	memory.memArray[start + 1] = f.name[1];
 	memory.memArray[start + 2] = f.name[2];
@@ -214,11 +200,9 @@ void insertFile(File &f, int start)
 	memory.memArray[start + 29] = (f.size & 0xFF0000) >> 16;
 	memory.memArray[start + 30] = (f.size & 0xFF00) >> 8;
 	memory.memArray[start + 31] = f.size & 0xFF;
-    cout << "finished updating file bytes\n";
 
     // This part actual copies the file to the disk, 1 sector at a time
     // First get the file name
-    cout << "test 1\n";
     string fHandle = "";
     for(int i = 0; i < 8; i++){
         if(f.name[i] != ' ')
@@ -229,7 +213,6 @@ void insertFile(File &f, int start)
         if(f.ext[i] != ' ')
             fHandle += f.ext[i];
     }
-    cout << "test 2\n";
     // Create the input file stream to handle the correct file
     ifstream ifile(fHandle.c_str(),std::ifstream::in);
     // Set the beginning spot on disk where to insert the file
@@ -241,9 +224,7 @@ void insertFile(File &f, int start)
     int filesize = 0;
     // while the file is still good, keep taking bytes out of it
     while(ifile.good()){
-        cout << "test 3, startSector = " << startSector << "\n";
         memory.memArray[startByte + counter] = b; // set the byte on disk to the current byte from the file
-        cout << "test 4\n";
         filesize++;
         b = ifile.get();
         counter++;
@@ -255,7 +236,52 @@ void insertFile(File &f, int start)
         }
     }
     ifile.close();
-    cout << "number of bytes copied to disk: " << filesize << endl;
+    //cout << "number of bytes copied to disk: " << filesize << endl;
+}
+
+/**
+* Goes through root directory and sets all first bytes of all 32-byte blocks to be 0xE5 or 0x00 if empty
+*/
+void setFirstDirectoryBytes(){
+    int i = BEGIN_BYTE_ENTRY-32;
+    bool last = true;
+    for(;i >= FIRST_FILE_BYTE; i-=32){
+        if(memory.memArray[i+1] == 0){
+            if(last)
+                memory.memArray[i] = 0x00;
+            else
+                memory.memArray[i] = 0xE5;
+        }
+    }
+}
+
+void directoryDump(){
+    setFirstDirectoryBytes(); // first ensure that the first byte of each possible directory is set
+    string header = "\n|-----FILENAME-----|-EXTN-|AT|RESV|CRTM|CRDT|LADT|IGNR|LWTM|LWDT|FRST|--SIZE--|             \n";
+    cout << header;
+    for(int i = FIRST_FILE_BYTE; i < BEGIN_BYTE_ENTRY; i+=32){
+        if(memory.memArray[i] == 0x00) // no more files to see here...
+            break;
+        else if(memory.memArray[i] != 0xE5){ // actually going to print a directory listing
+            char fname[8];
+            char ext[3];
+            for(int j = 0; j < 32; j++){
+                printf("%02x",memory.memArray[i+j]);
+                if(j%2 == 1)
+                    cout << ' '; 
+                if(j >= 0 && j < 8)
+                    fname[j] = memory.memArray[i+j];
+                else if(j < 11)
+                    ext[j-8] = memory.memArray[i+j];
+            }
+            string fname_string(fname);
+            fname_string = fname_string.substr(fname_string.find_first_not_of(" "),8);
+            string ext_string(ext);
+            ext_string = ext_string.substr(ext_string.find_first_not_of(" "),3);
+            printf("%8s %3s\n",fname_string.c_str(),ext_string.c_str()); 
+        }
+    }
+
 }
 
 void copyFileToDisk(){
@@ -275,7 +301,7 @@ void copyFileToDisk(){
     string fHandle;
     string fName;
     string extension;
-    cout << "Filename to copy to the simulated disk: ";
+    cout << "\nFilename to copy to the simulated disk: ";
     cin >> fHandle;
     extension = fHandle.substr(fHandle.find(".")+1,3);
     fName = fHandle.substr(0,fHandle.find("."));
@@ -288,14 +314,14 @@ void copyFileToDisk(){
                 n[k] = fName.at(j);
         }
         for(k = 0; k < 8 - fName.length(); k++)
-            n[k] = ' ';
+            n[k] = ' '; // we must ensure that padded spaces are added so no extra bytes are made 0x00
         k = 3 - extension.length(), j = 0;
         for(;k < 3; ++k, ++j){
             if(j < extension.length())
-                e[k] = extension.at(j);
+                e[k] = extension.at(j); 
         }
         for(k = 0; k < 3 - extension.length(); k++)
-            e[k] = ' ';
+            e[k] = ' '; // pad in some spaces just as before
         long start,finish;
         start = iFile.tellg();
         iFile.seekg (0, ios::end);
@@ -303,16 +329,13 @@ void copyFileToDisk(){
         iFile.close();
         int s = (finish-start) & 0xFFFF;
         if(s <= freeFatEntries * 512){
-            cout << "start createFile method" << endl;
             createFile(n,e,a,r,ct,cd,lad,i,lmt,lmd,fls,s);
-            //printf("\nsize of '%s' : %db\n",fHandle.c_str(),s);
-            cout << "end createFile method\n";
         }
         else
             cout << "\nError: Not enough space on disk for the file...\n";
     }
     else
-        cout << "Bad File...\n";
+        cout << "Bad file name...\n";
 }
 
 ushort getCurrDate(){
@@ -359,11 +382,7 @@ void createFile(byte n[8], byte e[3], byte a, ushort r, ushort ct, ushort cd, us
 	myFile.size = s;
     setEntry(fls,setFatChain(fls,s)); // set up the FAT chain for this file
 	int startIndex = findEmptyDirectory();
-    cout << "start insertFile method with startIndex = " << startIndex << "\n";
 	insertFile(myFile, startIndex);
-    cout << "end insertFile method\n";
-    cout << "Testing chain starting at FAT entry: " << fls << endl;
-    printFAT();
 }
 
 /**
@@ -375,11 +394,11 @@ ushort setFatChain(ushort pos, int size){
     int count = size - 512;
     if(count > 0){ // more bytes left in file
         setEntry(pos,findFreeFat(pos)); // set current FAT entry to point to new free FAT entry
-        setFatChain(getEntry(pos),count);
-        return getEntry(pos);
+        setFatChain(getEntry(pos),count); // set the chain for the referenced FAT entry
+        return getEntry(pos); // return this entry's position
     }
     else // this is last FAT entry for the file
-        setEntry(pos,0xFFF);
+        setEntry(pos,0xFFF); // set this entry to point to 0xFFF
         return 0xFFF;
 }
 
@@ -470,10 +489,16 @@ ushort getEntry(ushort pos){
     }
 }
 
+
+/**
+* Provides the position of a free FAT entry, excluding the one sent by parameter
+* param a the FAT entry that needs to point to another entry
+*/
 ushort findFreeFat(ushort a)
 {
     for (int i = 2; i <= MAX_FAT_ENTRY; i++)
 	{
+        // Insure that the entry is free and not the same entry as the one pointing here
 		if (getEntry(i) == 0 && i != a)
 		{
 			return i;
