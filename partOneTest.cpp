@@ -78,6 +78,7 @@ ushort getCurrTime();
 ushort setFatChain(ushort pos, int size);
 void setFirstDirectoryBytes();
 void freeFatChain(ushort a);
+int getDirectoryByte(string str);
 
 // Requested User Options
 void copyFileToDisk();  // option # 2
@@ -402,6 +403,62 @@ void freeFatChain(ushort a){
         freeFatChain(getEntry(a));
         setEntry(a,0x00); // set FAT entry to unused
     }
+}
+
+/**
+* Returns the byte number for the directory entry for the given file
+* returns -1 if file is not found in root directory
+* param str the file name as a string
+*/
+int getDirectoryByte(string str){
+    string extension = str.substr(str.find(".")+1,3);
+    string fName = str.substr(0,str.find("."));
+    byte n[8], e[3];
+
+    // Set byte arrays with with to compare to directories in the root directory
+    unsigned k = 8 - fName.length(), j = 0;
+    for(;k < 8; ++k, ++j){
+        if(j < fName.length())
+            n[k] = fName.at(j);
+    }
+    for(k = 0; k < 8 - fName.length(); k++)
+        n[k] = ' '; // we must ensure that padded spaces are added so no extra bytes are made 0x00
+    k = 3 - extension.length(), j = 0;
+    for(;k < 3; ++k, ++j){
+        if(j < extension.length())
+            e[k] = extension.at(j); 
+    }
+    for(k = 0; k < 3 - extension.length(); k++)
+        e[k] = ' '; // pad in some spaces just as before
+
+    // traverse the root directory in search of desired file
+    bool nameMatch;
+    bool extMatch;
+    int found = -1;
+    for(int i = FIRST_FILE_BYTE; i < BEGIN_BYTE_ENTRY; i+=32){
+        if(memory.memArray[i] != 0xE5 && memory.memArray[i] != 0x00){
+            // Check for file name match
+            nameMatch = true;
+            extMatch = true;
+            for(int j = 0; j < 8; j++){
+                if(n[j] != memory.memArray[i+j]){
+                    nameMatch = false;
+                    break;
+                }
+            }
+            for(int j = 8; j < 11; j++){
+                if(e[j-8] != memory.memArray[i+j]){
+                    extMatch = false;
+                    break;
+                }
+            }
+            if(nameMatch && extMatch){
+                found = i;
+                break; // leave loop at first instance of the file
+            }
+        }
+    }
+    return found;
 }
 
 ushort getCurrDate(){
