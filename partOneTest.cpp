@@ -88,6 +88,7 @@ void deleteFile();      // option # 3
 void directoryDump();   // option # 6
 void fatDump();         // option # 7
 void listFatChain();    // option # 8
+void sectorDump();      // option # 9
 
 int main(){
     /*
@@ -144,7 +145,7 @@ int main(){
                 listFatChain();
                 break;
             case 9:
-                //something
+                sectorDump();
                 break;
             default:
                 return 0;
@@ -612,6 +613,35 @@ void listFatChain(){
         printf("%03d ",vec[i]+33-2);
     }
     cout << "\n";
+}
+
+// Option #9 Print a sector to the screen 
+void sectorDump(){
+    int sector;
+    cout << "\nSelect physical sector to display: ";
+    cin >> sector;
+    int secByte = sector * SECTOR_SIZE;
+    for(int i = 0; i < SECTOR_SIZE; i+=20){
+        printf("%03d: ",i);
+        for(int j = 0; j < 20; j++){
+            if(i+j < SECTOR_SIZE)
+                printf("%02x ",memory.memArray[secByte+i+j]);
+            else
+                printf("   "); // create the spacing so the words print aligned to the right
+        }
+        // Now print the words represented by the bytes
+        for(int j = 0; j < 20; j++){
+            if(i+j < SECTOR_SIZE){ // we are within range
+                if(memory.memArray[secByte+i+j] > 31 && memory.memArray[secByte+i+j] < 127)   
+                    printf("%c",memory.memArray[secByte+i+j]); // printable character
+                else
+                    printf(" ");
+            }
+            else
+                printf(" "); // fill spaces for output be aligned correctly
+        }
+        cout << endl;
+    }
 }
 
 vector<ushort> printFatChain(ushort num){ 
