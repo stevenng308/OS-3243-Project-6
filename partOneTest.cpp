@@ -21,6 +21,7 @@
 #define LAST_INVALID_ENTRY 3071 // first invalid entry is 2849
 #define FIRST_FILE_BYTE 9728
 #define FILE_ENTRY_SIZE 32
+#define SECTOR_SIZE 512
 
 using namespace std;
 
@@ -83,21 +84,22 @@ MainMemory memory;
 // Declare Methods
 void loadSystem();
 void initializeFAT();
-void setEntry(short pos, short val);
+void setEntry(ushort pos, ushort val);
 void printFAT();
-short getEntry(short pos);
-short findFreeFat();
+ushort getEntry(ushort pos);
+ushort findFreeFat(ushort a);
 void insertFile(File &f, int start);
 void createFile(byte n[8], byte e[3], byte a, ushort r, ushort ct, ushort cd, ushort lad, ushort i, ushort lmt, ushort lmd, ushort fls, uint s);
 void copyFileToDisk();
 int findEmptyDirectory();
 ushort getCurrDate();
 ushort getCurrTime();
-ushort setFatChain(ushort fls, int size);
+ushort setFatChain(ushort pos, int size);
 
 
 int main(){
-    /*ifstream ifile("fdd.flp",std::ifstream::in);
+    /*
+    ifstream ifile("fdd.flp",std::ifstream::in);
     byte b = ifile.get();
 
 
@@ -179,6 +181,7 @@ void loadSystem()
 
 void insertFile(File &f, int start)
 {
+    cout << "begin updating file bytes\n";
 	memory.memArray[start] = f.name[0];
 	memory.memArray[start + 1] = f.name[1];
 	memory.memArray[start + 2] = f.name[2];
@@ -211,9 +214,11 @@ void insertFile(File &f, int start)
 	memory.memArray[start + 29] = (f.size & 0xFF0000) >> 16;
 	memory.memArray[start + 30] = (f.size & 0xFF00) >> 8;
 	memory.memArray[start + 31] = f.size & 0xFF;
+    cout << "finished updating file bytes\n";
 
     // This part actual copies the file to the disk, 1 sector at a time
     // First get the file name
+    cout << "test 1\n";
     string fHandle = "";
     for(int i = 0; i < 8; i++){
         if(f.name[i] != ' ')
@@ -224,38 +229,33 @@ void insertFile(File &f, int start)
         if(f.ext[i] != ' ')
             fHandle += f.ext[i];
     }
-    // Open the file
-    ifstream iFile(fHandle.c_str());
-    // Create pointer to read buffer for file
-    filebuf* fbuf = iFile.rdbuf();
-    // Create character array for entire file
-    char* buffer=new char[f.size];
-    // Get data from whole file at once
-    fbuf->sgetn (buffer,f.size);
-    // Close file
-    iFile.close();
-    // Alright now that the whole file is here in memory, no more disk IO
-    // Start a for loop that copies file into correct sectors, 1 sector at a time.
+    cout << "test 2\n";
+    // Create the input file stream to handle the correct file
+    ifstream ifile(fHandle.c_str(),std::ifstream::in);
+    // Set the beginning spot on disk where to insert the file
     ushort startSector = f.firstLogicalSector;
-    int startByte = (startSector + 33 - 2) * 512; 
-    for(uint i = 0; i < ceil((double)f.size/512.0); i++){
-        for(uint j = 0; j < 512; j++){
-            if(i*512+j < f.size)
-                memory.memArray[startByte+j] = buffer[i*512+j];
-            if(j==511 && i*512+j < f.size){ // we'll need to move to the next sector in the chain
-                startSector = getEntry(startSector);
-                startByte = (startSector + 33 - 2) * 512;
-            }
+    int startByte = (startSector + 33 - 2) * 512;
+    // take a byte from the file
+    byte b = ifile.get();
+    int counter = 0; 
+    int filesize = 0;
+    // while the file is still good, keep taking bytes out of it
+    while(ifile.good()){
+        cout << "test 3, startSector = " << startSector << "\n";
+        memory.memArray[startByte + counter] = b; // set the byte on disk to the current byte from the file
+        cout << "test 4\n";
+        filesize++;
+        b = ifile.get();
+        counter++;
+        // If we have reached the end of the sector, we must move to next sector
+        if(counter==512/* && getEntry(startSector)!=0xFFF*/){
+            startSector = getEntry(startSector);
+            startByte = (startSector + 33 - 2) * 512;
+            counter = 0; // restart the counter to begin at the start of next sector
         }
     }
-    // Free the memory once used by the buffer
-    for(uint i = 0; i < f.size; i++){
-        printf("%02x ",buffer[i]);
-    }
-    cout << endl;
-    delete[] buffer;
-    // I'm still working on this method to get it to print the right stuff. This is only the buffer
-    // , so next, i'm going to check the actual bytes in the memory array
+    ifile.close();
+    cout << "number of bytes copied to disk: " << filesize << endl;
 }
 
 void copyFileToDisk(){
@@ -270,7 +270,7 @@ void copyFileToDisk(){
     ushort i = 0;
     ushort lmt = ct;
     ushort lmd = cd;
-    ushort fls = findFreeFat(); // These 11 
+    ushort fls = findFreeFat(1); // These 11 
 
     string fHandle;
     string fName;
@@ -287,11 +287,15 @@ void copyFileToDisk(){
             if(j < fName.length())
                 n[k] = fName.at(j);
         }
+        for(k = 0; k < 8 - fName.length(); k++)
+            n[k] = ' ';
         k = 3 - extension.length(), j = 0;
         for(;k < 3; ++k, ++j){
             if(j < extension.length())
                 e[k] = extension.at(j);
         }
+        for(k = 0; k < 3 - extension.length(); k++)
+            e[k] = ' ';
         long start,finish;
         start = iFile.tellg();
         iFile.seekg (0, ios::end);
@@ -299,8 +303,10 @@ void copyFileToDisk(){
         iFile.close();
         int s = (finish-start) & 0xFFFF;
         if(s <= freeFatEntries * 512){
+            cout << "start createFile method" << endl;
             createFile(n,e,a,r,ct,cd,lad,i,lmt,lmd,fls,s);
             //printf("\nsize of '%s' : %db\n",fHandle.c_str(),s);
+            cout << "end createFile method\n";
         }
         else
             cout << "\nError: Not enough space on disk for the file...\n";
@@ -320,10 +326,10 @@ ushort getCurrDate(){
 
 ushort getCurrTime(){
     ushort result = 0; 
-    struct tm cd;
-    result |= ((cd.tm_hour & 0x1F) << 11); // Hour of day comes first (0-23)
-    result |= ((cd.tm_min & 0x3F) << 7); // then comes the minutes after the hour (0-59)
-    result |= (cd.tm_sec%30 & 0x1F); // and finally the number pair of seconds (0-29)
+    struct tm ct;
+    result |= ((ct.tm_hour & 0x1F) << 11); // Hour of day comes first (0-23)
+    result |= ((ct.tm_min & 0x3F) << 7); // then comes the minutes after the hour (0-59)
+    result |= (ct.tm_sec%30 & 0x1F); // and finally the number pair of seconds (0-29)
     return result;
 }
 
@@ -353,7 +359,11 @@ void createFile(byte n[8], byte e[3], byte a, ushort r, ushort ct, ushort cd, us
 	myFile.size = s;
     setEntry(fls,setFatChain(fls,s)); // set up the FAT chain for this file
 	int startIndex = findEmptyDirectory();
+    cout << "start insertFile method with startIndex = " << startIndex << "\n";
 	insertFile(myFile, startIndex);
+    cout << "end insertFile method\n";
+    cout << "Testing chain starting at FAT entry: " << fls << endl;
+    printFAT();
 }
 
 /**
@@ -361,13 +371,16 @@ void createFile(byte n[8], byte e[3], byte a, ushort r, ushort ct, ushort cd, us
 * param fls the FAT entry short where we begin
 * param size the size of the file, or what's left of it at this point
 */
-ushort setFatChain(ushort fls, int size){
+ushort setFatChain(ushort pos, int size){
     int count = size - 512;
     if(count > 0){ // more bytes left in file
-        return setFatChain(fls,count);  
+        setEntry(pos,findFreeFat(pos)); // set current FAT entry to point to new free FAT entry
+        setFatChain(getEntry(pos),count);
+        return getEntry(pos);
     }
     else // this is last FAT entry for the file
-        return 0xFFF; // end recursion
+        setEntry(pos,0xFFF);
+        return 0xFFF;
 }
 
 int findEmptyDirectory(){
@@ -383,12 +396,12 @@ void initializeFAT(){
     setEntry(0, 0xFF0);
     setEntry(1, 0xFF1);
     // Initialize all the unused sectors
-    for(short i = 2; i <= MAX_FAT_ENTRY; i++){
+    for(ushort i = 2; i <= MAX_FAT_ENTRY; i++){
         setEntry(i, 0x00);
     }
     // The following FAT entries are invalid and do not represent
     // any available sector on disk.
-    for(short i = MAX_FAT_ENTRY + 1; i <= LAST_INVALID_ENTRY; i++){
+    for(ushort i = MAX_FAT_ENTRY + 1; i <= LAST_INVALID_ENTRY; i++){
         setEntry(i, 0xFF7);
     }
 }
@@ -398,7 +411,7 @@ void initializeFAT(){
 * param val the value we intend to set in the FAT
 * param pos the index in the FAT tables
 */
-void setEntry(short pos, short val){
+void setEntry(ushort pos, ushort val){
     // In the schema [yz Zx XY], the lower-case letters represent what we call
     // the low-order entry, the high-order entry would be the upper-case letters.
     if(pos<0 || pos > LAST_INVALID_ENTRY)
@@ -443,7 +456,7 @@ void printFAT(){
 * Retrieves the value sent in the parameter from the FAT table
 * param b the index in the FAT table that we want
 */
-short getEntry(short pos){
+ushort getEntry(ushort pos){
     // Using the same schema as in 'setEntry()' we will extract a FAT entry's
     // value and return it as a short [schema: yz Zx XY]
     if(pos<0 || pos > LAST_INVALID_ENTRY)
@@ -457,11 +470,11 @@ short getEntry(short pos){
     }
 }
 
-short findFreeFat()
+ushort findFreeFat(ushort a)
 {
     for (int i = 2; i <= MAX_FAT_ENTRY; i++)
 	{
-		if (getEntry(i) == 0)
+		if (getEntry(i) == 0 && i != a)
 		{
 			return i;
 		}
