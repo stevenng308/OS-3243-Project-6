@@ -68,7 +68,6 @@ MainMemory memory;
 void loadSystem();
 void initializeFAT();
 void setEntry(ushort pos, ushort val);
-void printFAT();
 ushort getEntry(ushort pos);
 ushort findFreeFat(ushort a);
 void insertFile(File &f, int start);
@@ -78,11 +77,13 @@ ushort getCurrDate();
 ushort getCurrTime();
 ushort setFatChain(ushort pos, int size);
 void setFirstDirectoryBytes();
+void freeFatChain(ushort a);
 
 // Requested User Options
-void directoryDump();
-void copyFileToDisk();
-
+void copyFileToDisk();  // option # 2
+void deleteFile();      // option # 3
+void directoryDump();   // option # 6
+void fatDump();         // option # 7
 
 int main(){
     /*
@@ -133,7 +134,7 @@ int main(){
                 directoryDump();
                 break;
             case 7:
-                printFAT();
+                fatDump();
                 break;
             case 8:
                 //something
@@ -147,7 +148,7 @@ int main(){
     }
     while(answer >= 1 && answer <= 9);
     memory.print();
-    printFAT();
+    //fatDump();
     return 0;
 }
 
@@ -338,6 +339,53 @@ void copyFileToDisk(){
         cout << "Bad file name...\n";
 }
 
+void deleteFile(){
+    // Get name of file to delete
+    string fHandle;
+    string fName;
+    string extension;
+    cout << "\nFilename to delete: ";
+    cin >> fHandle;
+    extension = fHandle.substr(fHandle.find(".")+1,3);
+    fName = fHandle.substr(0,fHandle.find("."));
+    byte n[8], e[3];
+
+    // Set byte arrays with with to compare to directories in the root directory
+    unsigned k = 8 - fName.length(), j = 0;
+    for(;k < 8; ++k, ++j){
+        if(j < fName.length())
+            n[k] = fName.at(j);
+    }
+    for(k = 0; k < 8 - fName.length(); k++)
+        n[k] = ' '; // we must ensure that padded spaces are added so no extra bytes are made 0x00
+    k = 3 - extension.length(), j = 0;
+    for(;k < 3; ++k, ++j){
+        if(j < extension.length())
+            e[k] = extension.at(j); 
+    }
+    for(k = 0; k < 3 - extension.length(); k++)
+        e[k] = ' '; // pad in some spaces just as before
+
+    // traverse the root directory in search of desired file
+    for(int i = FIRST_FILE_BYTE; i < BEGIN_BYTE_ENTRY; i+=32){
+        // Check for file name match
+        bool nameMatch = extMatch = true;
+        for(int j = 0; j < 8; j++){
+            if(n[j] != memory.memArray[i+j]){
+                nameMatch = false;
+                break;
+            }
+        }
+        for(int j = 8; j < 11; j++){
+            if(e[j-8] != memory.memArray[i+j]){
+                extMatch = false;
+                break;
+            }
+        }
+        // here you are bro!!! 
+    }
+}
+
 ushort getCurrDate(){
     ushort result = 0;
     struct tm cd;
@@ -455,7 +503,7 @@ void setEntry(ushort pos, ushort val){
 /**
 * Prints the contents of the FAT tables
 */
-void printFAT(){
+void fatDump(){
     cout << "\nPRIMARY FAT TABLE:\n";
     for(int i = 0; i < (LAST_INVALID_ENTRY+1)/20 + 1; i++){
         if((i+1)*20-1 <= LAST_INVALID_ENTRY)
