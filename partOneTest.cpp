@@ -122,7 +122,7 @@ int main(){
                 copyFileToDisk();
                 break;
             case 3:
-                //something
+                deleteFile();
                 break;
             case 4:
                 //something
@@ -349,6 +349,7 @@ void deleteFile(){
     extension = fHandle.substr(fHandle.find(".")+1,3);
     fName = fHandle.substr(0,fHandle.find("."));
     byte n[8], e[3];
+    bool deleted = false;
 
     // Set byte arrays with with to compare to directories in the root directory
     unsigned k = 8 - fName.length(), j = 0;
@@ -369,7 +370,8 @@ void deleteFile(){
     // traverse the root directory in search of desired file
     for(int i = FIRST_FILE_BYTE; i < BEGIN_BYTE_ENTRY; i+=32){
         // Check for file name match
-        bool nameMatch = extMatch = true;
+        bool nameMatch = true;
+        bool extMatch = true;
         for(int j = 0; j < 8; j++){
             if(n[j] != memory.memArray[i+j]){
                 nameMatch = false;
@@ -382,7 +384,23 @@ void deleteFile(){
                 break;
             }
         }
-        // here you are bro!!! 
+        if(nameMatch && extMatch){
+            ushort chainStart = (memory.memArray[i+26] << 8) + memory.memArray[i+27];
+            freeFatChain(chainStart);
+            memory.memArray[i+1] = 0x00; // clear second byte
+            setFirstDirectoryBytes(); // set first byte of each directory according to it's filled status
+            deleted = true;
+        }
+    }
+    if(!deleted)
+        cout << "File not found\n";
+}
+
+void freeFatChain(ushort a){
+    if(a != 0xFFF){
+        // while we stil have a pointer to the referenced FAT entry, call freeFatChain on it
+        freeFatChain(getEntry(a));
+        setEntry(a,0x00); // set FAT entry to unused
     }
 }
 
