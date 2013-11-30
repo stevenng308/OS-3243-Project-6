@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <math.h>
 #include <stdio.h>
+#include <vector>
 #define BYTECOUNT 1474560
 #define BEGIN_BYTE_ENTRY 16896
 #define SECTOR_SIZE 512
@@ -79,12 +80,14 @@ ushort setFatChain(ushort pos, int size);
 void setFirstDirectoryBytes();
 void freeFatChain(ushort a);
 int getDirectoryByte(string str);
+vector<ushort> printFatChain(ushort num);
 
 // Requested User Options
 void copyFileToDisk();  // option # 2
 void deleteFile();      // option # 3
 void directoryDump();   // option # 6
 void fatDump();         // option # 7
+void listFatChain();    // option # 8
 
 int main(){
     /*
@@ -138,7 +141,7 @@ int main(){
                 fatDump();
                 break;
             case 8:
-                //something
+                listFatChain();
                 break;
             case 9:
                 //something
@@ -592,6 +595,34 @@ void fatDump(){
         cout << endl;
     }
     cout << endl;
+}
+
+void listFatChain(){
+    string fHandle;
+    cout << "\nFilename for which to list allocated sectors: "; 
+    cin >> fHandle;
+    int startIndex = getDirectoryByte(fHandle);
+    vector<ushort> vec = printFatChain((memory.memArray[startIndex+26] << 8) + memory.memArray[startIndex+27]);
+    cout << "Logical:  ";
+    for(unsigned i = 0; i < vec.size(); i++){
+        printf("%03d ",vec[i]);
+    }
+    cout << "\nPhysical: ";
+    for(unsigned i = 0; i < vec.size(); i++){
+        printf("%03d ",vec[i]+33-2);
+    }
+    cout << "\n";
+}
+
+vector<ushort> printFatChain(ushort num){ 
+    vector<ushort> vec;
+    if(num != 0xFFF){
+        vec.push_back(num);
+        vec.insert(vec.end(), printFatChain(getEntry(num)).begin(), printFatChain(getEntry(num)).end());
+        return vec; // return a vector with at least one element
+    }
+    else
+        return vec; // return an empty vector
 }
 
 /**
