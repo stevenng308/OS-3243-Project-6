@@ -39,7 +39,8 @@ struct MainMemory{
     
     MainMemory();
     void findFreeSector();
-    void insertIntoMemory(byte b);
+    short checkSector(int sectorNum);
+    //void insertIntoMemory(byte b);
     void print();
 };
 
@@ -838,9 +839,23 @@ void MainMemory::findFreeSector(){
 	
 }
 
-void MainMemory::insertIntoMemory(byte b)
+/*void MainMemory::insertIntoMemory(byte b)
 {
 	memory.memArray[0] = b;
+}*/
+
+short MainMemory::checkSector(int sectorNum)
+{
+	sectorNum -= 33;
+	int firstByteIndex = BEGIN_BYTE_ENTRY + sectorNum * 512;
+	if (memArray[firstByteIndex] != 0)
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
 }
 
 void MainMemory::print()
@@ -873,6 +888,10 @@ void MainMemory::print()
 			}
 			else if(j < 33){
 				toPrint = 'R';
+			}
+			else if(checkSector(j))
+			{
+				toPrint = 'X';
 			}
 			printf("%c",toPrint);
 		}
