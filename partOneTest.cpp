@@ -90,6 +90,7 @@ int getDirectoryByte(string str);
 vector<ushort> printFatChain(ushort num);
 
 // Requested User Options
+void listDirectory();   // option # 1
 void copyFileToDisk();  // option # 2
 void deleteFile();      // option # 3
 void renameFile();      // option # 4
@@ -129,7 +130,7 @@ int main(){
         cin >> answer;
         switch(answer){
             case 1:
-                //do something
+                listDirectory();
                 break;
             case 2:
                 copyFileToDisk();
@@ -270,6 +271,16 @@ void setFirstDirectoryBytes(){
                 memory.memArray[i] = 0xE5;
         }
     }
+}
+
+/**
+* Prints the directory like in MS-DOS
+*/
+void listDirectory(){
+	printf("\nVolume Serial Number is 1337-H4KR\n");
+	printf("Directory of C:\\\n");
+	
+	//TODO: Same for loop like directory dump below to find the directory entries
 }
 
 /**
@@ -844,6 +855,10 @@ void MainMemory::findFreeSector(){
 	memory.memArray[0] = b;
 }*/
 
+/**
+* Checks the first byte, starting from the data area of memory, of each sector
+* Returns a 1 if the first byte is not 0. Returns 0 otherwise
+*/
 short MainMemory::checkSector(int sectorNum)
 {
 	sectorNum -= 33;
@@ -858,6 +873,9 @@ short MainMemory::checkSector(int sectorNum)
 	}
 }
 
+/**
+* Prints the memaory map showing the uasge of each sector
+*/
 void MainMemory::print()
 {
 	float usedBytesPercentage = 100.0 * usedBytes / BYTECOUNT;
