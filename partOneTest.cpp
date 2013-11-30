@@ -247,7 +247,7 @@ void insertFile(File &f, int start)
         b = ifile.get();
         counter++;
         // If we have reached the end of the sector, we must move to next sector
-        if(counter==512/* && getEntry(startSector)!=0xFFF*/){
+        if(counter==512 && getEntry(startSector)!=0xFFF){
             startSector = getEntry(startSector);
             startByte = (startSector + 33 - 2) * 512;
             counter = 0; // restart the counter to begin at the start of next sector
