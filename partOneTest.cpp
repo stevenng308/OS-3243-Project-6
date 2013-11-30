@@ -128,7 +128,7 @@ int main(){
         cin >> answer;
         switch(answer){
             case 1:
-                memory.print();
+                //do something
                 break;
             case 2:
                 copyFileToDisk();
@@ -140,7 +140,7 @@ int main(){
                 renameFile();
                 break;
             case 5:
-                //something
+                memory.print();
                 break;
             case 6:
                 directoryDump();
