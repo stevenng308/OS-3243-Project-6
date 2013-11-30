@@ -128,7 +128,7 @@ int main(){
         cin >> answer;
         switch(answer){
             case 1:
-                //something
+                memory.print();
                 break;
             case 2:
                 copyFileToDisk();
@@ -853,9 +853,9 @@ void MainMemory::print()
 	float freeSectorsPercentage = 100.0 * (numOfSectors - usedSectors) / numOfSectors;
 	float sectorsPerFile = 100.0 * numOfSectors / numOfFiles;
 	
-	printf("CAPACITY:%7ib     USED:%7if (%5.1f%%)   FREE:%7if (%5.1f%%)\n", BYTECOUNT, usedBytes, usedBytesPercentage, numFreeBytes, freeBytesPercentage);
-	printf("SECTORS:%4i     USED:%4ip (%5.1f%%)   FREE:%4ip (%5.1f%%) ", numOfSectors, usedSectors, usedSectorsPercentage, (numOfSectors - usedSectors), freeSectorsPercentage);
-	printf("FILES:%5i      SECTORS/FILE:%4f     LARGEST:%4i    SMALLEST:%4i\n", numOfFiles, sectorsPerFile, largestSector, smallestSector);
+	printf("CAPACITY: %7ib     USED: %7if (%5.1f%%)   FREE: %7if (%5.1f%%)\n", BYTECOUNT, usedBytes, usedBytesPercentage, numFreeBytes, freeBytesPercentage);
+	printf("SECTORS: %4i          USED: %4ip (%5.1f%%)      FREE: %4ip (%5.1f%%)\n", numOfSectors, usedSectors, usedSectorsPercentage, (numOfSectors - usedSectors), freeSectorsPercentage);
+	printf("FILES: %5i      SECTORS/FILE: %4f     LARGEST: %4is    SMALLEST: %4is\n", numOfFiles, sectorsPerFile, largestSector, smallestSector);
 	cout << "\nDISK USAGE BY SECTOR:\n";
 	cout << bar;
 	for(int i = 0; i < 36; i++){
