@@ -263,7 +263,8 @@ void setFirstDirectoryBytes(){
 
 void directoryDump(){
     setFirstDirectoryBytes(); // first ensure that the first byte of each possible directory is set
-    string header = "\n|-----FILENAME-----|-EXTN-|AT|RESV|CRTM|CRDT|LADT|IGNR|LWTM|LWDT|FRST|--SIZE--|             \n";
+    cout << "\nROOT DIRECTORY:\n";
+    string header = "|-----FILENAME-----|-EXTN-|AT|RESV|CRTM|CRDT|LADT|IGNR|LWTM|LWDT|FRST|--SIZE--|             \n";
     cout << header;
     for(int i = FIRST_FILE_BYTE; i < BEGIN_BYTE_ENTRY; i+=32){
         if(memory.memArray[i] == 0x00) // no more files to see here...
@@ -665,6 +666,10 @@ void sectorDump(){
     int sector;
     cout << "\nSelect physical sector to display: ";
     cin >> sector;
+    if(sector < 0 || sector > 2879){
+        cout << "Invalid sector selection, must be within range [0-2879]\n";
+        return;
+    }
     int secByte = sector * SECTOR_SIZE;
     for(int i = 0; i < SECTOR_SIZE; i+=20){
         printf("%03d: ",i);
