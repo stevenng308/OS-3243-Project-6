@@ -87,7 +87,7 @@ ushort setFatChain(ushort pos, int size);
 void setFirstDirectoryBytes();
 void freeFatChain(ushort a);
 int getDirectoryByte(string str);
-vector<ushort> printFatChain(ushort num);
+void printFatChain(ushort num,ushort FATs[], int index);
 
 // Requested User Options
 void copyFileToDisk();  // option # 2
@@ -701,14 +701,17 @@ void listFatChain(){
     cin >> fHandle;
     int startIndex = getDirectoryByte(fHandle);
     if(startIndex != -1){
-        vector<ushort> vec = printFatChain((memory.memArray[startIndex+26] << 8) + memory.memArray[startIndex+27]);
+        // Declare new array the size of the number of FAT entries needed for this file
+        int fatsNeeded =  ceil(((memory.memArray[startIndex+28] << 24) + (memory.memArray[startIndex+29] << 16) + (memory.memArray[startIndex+30] << 8) + memory.memArray[startIndex+31])/(double)SECTOR_SIZE);
+        ushort FATs[fatsNeeded]; 
+        printFatChain(((memory.memArray[startIndex+26] << 8) + memory.memArray[startIndex+27]),FATs,0);
         cout << "Logical:  ";
-        for(unsigned i = 0; i < vec.size(); i++){
-            printf("%03d ",vec[i]);
+        for(int i = 0; i < fatsNeeded; i++){
+            printf("%03d ",FATs[i]);
         }
         cout << "\nPhysical: ";
-        for(unsigned i = 0; i < vec.size(); i++){
-            printf("%03d ",vec[i]+33-2);
+        for(int i = 0; i < fatsNeeded; i++){
+            printf("%03d ",FATs[i]+33-2);
         }
         cout << "\n";
     }
@@ -755,19 +758,16 @@ void sectorDump(){
 }
 
 /**
-* Method that returns an updated vector that represents all FAT entries that point to
-* the sectors used by a file. This vector is used to print those logical sectors and 
+* Method that modifies an array that represents all FAT entries that point to
+* the sectors used by a file. This array is used to print those logical sectors and 
 * their physical counterparts to the screen.
 */
-vector<ushort> printFatChain(ushort num){ 
+void printFatChain(ushort num, ushort FATs[], int index){ 
     vector<ushort> vec;
-    if(num != 0xFFF){
-        vec.push_back(num);
-        vec.insert(vec.end(), printFatChain(getEntry(num)).begin(), printFatChain(getEntry(num)).end());
-        return vec; // return a vector with at least one element
+    if(num != 0xFFF){ // only if the current 'num' isn't 0xFFF, add it to the array
+        FATs[index] = num;
+        printFatChain(getEntry(num),FATs,index+1);
     }
-    else
-        return vec; // return an empty vector
 }
 
 /**
