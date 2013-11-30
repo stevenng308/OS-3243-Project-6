@@ -85,6 +85,7 @@ vector<ushort> printFatChain(ushort num);
 // Requested User Options
 void copyFileToDisk();  // option # 2
 void deleteFile();      // option # 3
+void renameFile();      // option # 4
 void directoryDump();   // option # 6
 void fatDump();         // option # 7
 void listFatChain();    // option # 8
@@ -130,7 +131,7 @@ int main(){
                 deleteFile();
                 break;
             case 4:
-                //something
+                renameFile();
                 break;
             case 5:
                 //something
@@ -153,7 +154,6 @@ int main(){
     }
     while(answer >= 1 && answer <= 9);
     memory.print();
-    //fatDump();
     return 0;
 }
 
@@ -284,7 +284,7 @@ void directoryDump(){
             fname_string = fname_string.substr(fname_string.find_first_not_of(" "),8);
             string ext_string(ext);
             ext_string = ext_string.substr(ext_string.find_first_not_of(" "),3);
-            printf("%8s %3s\n",fname_string.c_str(),ext_string.c_str()); 
+            printf("%-8s %3s\n",fname_string.c_str(),ext_string.c_str()); 
         }
     }
 
@@ -398,6 +398,47 @@ void deleteFile(){
         }
     }
     if(!deleted)
+        cout << "File not found\n";
+}
+
+void renameFile(){
+    string fHandle;
+    cout << "\nFilename to rename: ";
+    cin >> fHandle;
+    int byteStart = getDirectoryByte(fHandle);
+    if(byteStart != -1){
+        string nHandle;
+        string newName, newExt;
+        cout << "New name: ";
+        cin >> nHandle;
+        newExt = nHandle.substr(nHandle.find(".")+1,3);
+        newName = nHandle.substr(0,nHandle.find("."));
+    
+        byte n[8], e[3];
+
+        // Set byte arrays with with to compare to directories in the root directory
+        unsigned k = 8 - newName.length(), j = 0;
+        for(;k < 8; ++k, ++j){
+            if(j < newName.length())
+                n[k] = newName.at(j);
+        }
+        for(k = 0; k < 8 - newName.length(); k++)
+            n[k] = ' '; // we must ensure that padded spaces are added so no extra bytes are made 0x00
+        k = 3 - newExt.length(), j = 0;
+        for(;k < 3; ++k, ++j){
+            if(j < newExt.length())
+                e[k] = newExt.at(j); 
+        }
+        for(k = 0; k < 3 - newExt.length(); k++)
+            e[k] = ' '; // pad in some spaces just as before
+        
+        // Now update the bytes in the directory
+        for(int i = 0; i < 8; i++)
+            memory.memArray[byteStart+i] = n[i];   
+        for(int i = 8; i < 11; i++)
+            memory.memArray[byteStart+i] = e[i-8];
+    }
+    else
         cout << "File not found\n";
 }
 
@@ -603,16 +644,20 @@ void listFatChain(){
     cout << "\nFilename for which to list allocated sectors: "; 
     cin >> fHandle;
     int startIndex = getDirectoryByte(fHandle);
-    vector<ushort> vec = printFatChain((memory.memArray[startIndex+26] << 8) + memory.memArray[startIndex+27]);
-    cout << "Logical:  ";
-    for(unsigned i = 0; i < vec.size(); i++){
-        printf("%03d ",vec[i]);
+    if(startIndex != -1){
+        vector<ushort> vec = printFatChain((memory.memArray[startIndex+26] << 8) + memory.memArray[startIndex+27]);
+        cout << "Logical:  ";
+        for(unsigned i = 0; i < vec.size(); i++){
+            printf("%03d ",vec[i]);
+        }
+        cout << "\nPhysical: ";
+        for(unsigned i = 0; i < vec.size(); i++){
+            printf("%03d ",vec[i]+33-2);
+        }
+        cout << "\n";
     }
-    cout << "\nPhysical: ";
-    for(unsigned i = 0; i < vec.size(); i++){
-        printf("%03d ",vec[i]+33-2);
-    }
-    cout << "\n";
+    else
+        cout << "File not found\n";
 }
 
 // Option #9 Print a sector to the screen 
