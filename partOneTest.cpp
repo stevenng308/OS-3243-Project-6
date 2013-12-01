@@ -607,6 +607,8 @@ void createFile(byte n[8], byte e[3], byte a, ushort r, ushort ct, ushort cd, us
     setEntry(fls,setFatChain(fls,s)); // set up the FAT chain for this file
 	int startIndex = findEmptyDirectory();
 	insertFile(myFile, startIndex);
+    // assuming the insertFile method runs properly, decrement the number of FAT entries remaining
+    freeFatEntries -= ceil(s/(double)SECTOR_SIZE); 
 }
 
 /**
