@@ -816,6 +816,7 @@ ushort findFreeFat(ushort a)
 			return i;
 		}
 	}
+    cout << "Unable to find free FAT entry\n";
 	return -1;
 }
 
