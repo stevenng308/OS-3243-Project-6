@@ -64,14 +64,6 @@ struct File
 
 MainMemory memory;
 
-//variables for usage map
-int usedBytes;
-short usedSectors;
-short numOfFiles;
-short largestSector; //largest num of sectors that a file is using
-short smallestSector; //smallest num of sectors that a file is using
-
-
 // Declare Methods
 void loadSystem();
 void initializeFAT();
@@ -887,10 +879,17 @@ short MainMemory::checkSector(int sectorNum)
 }
 
 /**
-* Prints the memaory map showing the uasge of each sector
+* Prints the memory map showing the uasge of each sector
 */
 void MainMemory::print()
 {
+	//variables for usage map
+	int usedBytes;
+	short usedSectors;
+	short numOfFiles;
+	short largestSector; //largest num of sectors that a file is using
+	short smallestSector; //smallest num of sectors that a file is using
+	
 	float usedBytesPercentage = 100.0 * usedBytes / BYTECOUNT;
 	int numFreeBytes = BYTECOUNT - usedBytes;
 	float freeBytesPercentage = 100.0 * numFreeBytes  / BYTECOUNT;
@@ -899,9 +898,9 @@ void MainMemory::print()
 	float freeSectorsPercentage = 100.0 * (numOfSectors - usedSectors) / numOfSectors;
 	float sectorsPerFile = 100.0 * numOfSectors / numOfFiles;
 	
-	printf("CAPACITY: %7ib     USED: %7if (%5.1f%%)   FREE: %7if (%5.1f%%)\n", BYTECOUNT, usedBytes, usedBytesPercentage, numFreeBytes, freeBytesPercentage);
-	printf("SECTORS: %4i          USED: %4ip (%5.1f%%)      FREE: %4ip (%5.1f%%)\n", numOfSectors, usedSectors, usedSectorsPercentage, (numOfSectors - usedSectors), freeSectorsPercentage);
-	printf("FILES: %5i      SECTORS/FILE: %4f     LARGEST: %4is    SMALLEST: %4is\n", numOfFiles, sectorsPerFile, largestSector, smallestSector);
+	printf("CAPACITY: %7ib     USED: %-7ib (%3.1f%%)   FREE: %-7ib (%3.1f%%)\n", BYTECOUNT, usedBytes, usedBytesPercentage, numFreeBytes, freeBytesPercentage);
+	printf("SECTORS: %4i          USED: %-4i (%5.1f%%)      FREE: %-4i (%5.1f%%)\n", numOfSectors, usedSectors, usedSectorsPercentage, (numOfSectors - usedSectors), freeSectorsPercentage);
+	printf("FILES: %-5i      SECTORS/FILE: %-4f     LARGEST: %-4i-s    SMALLEST: %-4is\n", numOfFiles, sectorsPerFile, largestSector, smallestSector);
 	cout << "\nDISK USAGE BY SECTOR:\n";
 	cout << bar;
 	for(int i = 0; i < 36; i++){
