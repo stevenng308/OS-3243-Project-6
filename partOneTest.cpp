@@ -454,7 +454,7 @@ void renameFile(){
     
         byte n[8], e[3];
 
-        // Set byte arrays with with to compare to directories in the root directory
+        // Set byte arrays with which to compare to directories in the root directory
         unsigned k = 8 - newName.length(), j = 0;
         for(;k < 8; ++k, ++j){
             if(j < newName.length())
@@ -623,9 +623,10 @@ ushort setFatChain(ushort pos, int size){
         setFatChain(getEntry(pos),count); // set the chain for the referenced FAT entry
         return getEntry(pos); // return this entry's position
     }
-    else // this is last FAT entry for the file
+    else{ // this is last FAT entry for the file
         setEntry(pos,0xFFF); // set this entry to point to 0xFFF
         return 0xFFF;
+    }
 }
 
 /**
@@ -634,9 +635,8 @@ ushort setFatChain(ushort pos, int size){
 */
 int findEmptyDirectory(){
     for(int i = FIRST_FILE_BYTE; i < BEGIN_BYTE_ENTRY; i+= 32){
-        if(memory.memArray[i] == 0xE5 || memory.memArray[i] == 0x00){
+        if(memory.memArray[i] == 0xE5 || memory.memArray[i] == 0x00)
             return i;
-        }
     }
     return -1;
 }
