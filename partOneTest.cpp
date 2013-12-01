@@ -454,7 +454,7 @@ void renameFile(){
     
         byte n[8], e[3];
 
-        // Set byte arrays with with to compare to directories in the root directory
+        // Set byte arrays with which to compare to directories in the root directory
         unsigned k = 8 - newName.length(), j = 0;
         for(;k < 8; ++k, ++j){
             if(j < newName.length())
@@ -635,9 +635,8 @@ ushort setFatChain(ushort pos, int size){
 */
 int findEmptyDirectory(){
     for(int i = FIRST_FILE_BYTE; i < BEGIN_BYTE_ENTRY; i+= 32){
-        if(memory.memArray[i] == 0xE5 || memory.memArray[i] == 0x00){
+        if(memory.memArray[i] == 0xE5 || memory.memArray[i] == 0x00)
             return i;
-        }
     }
     return -1;
 }
