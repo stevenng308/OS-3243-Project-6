@@ -277,6 +277,28 @@ void listDirectory(){
 	printf("Directory of C:\\\n");
 	
 	//TODO: Same for loop like directory dump below to find the directory entries
+	for(int i = FIRST_FILE_BYTE; i < BEGIN_BYTE_ENTRY; i+=32){
+        if(memory.memArray[i] == 0x00) // no more files to see here...
+            break;
+        else if(memory.memArray[i] != 0xE5){ // actually going to print a directory listing
+			char fname[8];
+            char ext[3];
+            for(int j = 0; j < 32; j++){
+				if(j >= 0 && j < 8)
+                    fname[j] = memory.memArray[i+j];
+                else if(j < 11)
+                    ext[j-8] = memory.memArray[i+j];
+			}
+			string fname_string(fname);
+			fname_string = fname_string.substr(fname_string.find_first_not_of(" "),8);
+			string ext_string(ext);
+			ext_string = ext_string.substr(ext_string.find_first_not_of(" "),3);
+			printf("\n%-8s %3s", fname_string.c_str(), ext_string.c_str()); //print filename and ext
+			printf("   %7d", (memory.memArray[i + 28] << 24) + (memory.memArray[i + 29] << 16) + (memory.memArray[i + 30] << 8) + (memory.memArray[i + 31])); //print file size
+			ushort month = (memory.memArray[i + 24] << 8) + memory.memArray[i + 25];
+			printf(" %02d", month);
+		}    
+	}
 }
 
 /**
