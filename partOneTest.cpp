@@ -80,7 +80,8 @@ void setFirstDirectoryBytes();
 void freeFatChain(ushort a);
 int getDirectoryByte(string str);
 void printFatChain(ushort num,ushort FATs[], int index);
-int determineUsedBytes();
+int getUsedBytes();
+short getUsedSectors();
 
 // Requested User Options
 void listDirectory();   // option # 1
@@ -884,26 +885,30 @@ short MainMemory::checkSector(int sectorNum)
 }
 
 /**
-* Method: determineUsedBytes()
+* Method: getUsedBytes()
 * goes through each part of the disk (Boot sector -> FAT tables -> Root Directory -> Data area)
 * and counts the bytes that are not used, which doesn't mean counting all the ones that are 0x00.
 * In some cases, the bytes that are 0x00 are still being used to hold valuable information.
 * returns the total number of bytes being used on disk.
 */
-int determineUsedBytes(){
-    int used = 0;
+int getUsedBytes(){
+    int used;
+    used = 512; // begin by counting all of the boot sector
     // Go through boot sector and count all bytes that are set to 0x00
+    /** - If we must count the 0x00 bytes in the boot sector as unused, use the block below
+    used = 0;
     for(int i = 0; i < 512; i++){
         if(memory.memArray[i] != 0x00)
             ++used;
-    }
+    }*/
     // Go though the FAT table and count the 'ENTRIES' that are not 0x00,
     // Then, multiply that number by 1.5, since each entry takes 1.5 bytes of space.
     // Then, multiply that by 2, since FAT table 1 is duplicated in FAT2
     // A used byte in the FAT table can be used to indicate the last sector of a file,
     // a reserved FAT entry, a bad FAT entry, or the number representing the next
     // sector of a file. Only 0x00 represents an unused entry.
-    for(int i = 0; i < FAT_SIZE; i++){
+    cout << "Used 1 - after boot sector : "<<used<<endl;
+    for(int i = 0; i <= LAST_INVALID_ENTRY; i++){
         if(getEntry(i) != 0x00)
             used += 3; // 1.5 bytes per FAT table
     }
@@ -912,19 +917,28 @@ int determineUsedBytes(){
     // byte is needed, but the next 31 are not -> add 1 to used. If the byte is 
     // 0x00 then break from the loop, no more to check. If the byte is not 0x00 or 
     // 0xE5, add 32 to used.
+    cout << "Used 2 - after FAT tables : "<<used<<endl;
     for(int i = FIRST_FILE_BYTE; i < BEGIN_BYTE_ENTRY; i += 32){
-        if(i == 0xE5)
-            ++used;
-        else if(i != 0x00 && i != 0xE5)
+        if(memory.memArray[i] != 0x00 && memory.memArray[i] != 0xE5){
             used += 32;
+        }
+        else if(memory.memArray[i] == 0xE5)
+            ++used;
         else
             break;
     }   
     // Add number of free fat entries * 512 to used 
     // Bytes equal to 0x00 in a used sector will be counted, because the
     // the fat entry will be counted as used. 
+    cout << "Used 3 - after Root Directory : "<<used<<endl;
     used += ((MAX_FAT_ENTRY + 1 - 2) - freeFatEntries) * SECTOR_SIZE;
+
+    cout << "Used 4 - after sectors 33-2879 : "<<used<<endl;
     return used;
+}
+
+short getUsedSectors(){
+    
 }
 
 /**
@@ -933,8 +947,8 @@ int determineUsedBytes(){
 void MainMemory::print()
 {
 	//variables for usage map
-	int usedBytes = determineUsedBytes();
-	short usedSectors;
+	int usedBytes = getUsedBytes();
+	short usedSectors = getUsedSectors();
 	short numOfFiles;
 	short largestSector; //largest num of sectors that a file is using
 	short smallestSector; //smallest num of sectors that a file is using
