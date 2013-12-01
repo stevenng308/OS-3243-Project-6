@@ -296,8 +296,14 @@ void listDirectory(){
 			ext_string = ext_string.substr(ext_string.find_first_not_of(" "),3);
 			printf("\n%-8s %3s", fname_string.c_str(), ext_string.c_str()); //print filename and ext
 			printf("   %7d", (memory.memArray[i + 28] << 24) + (memory.memArray[i + 29] << 16) + (memory.memArray[i + 30] << 8) + (memory.memArray[i + 31])); //print file size
-			ushort month = (memory.memArray[i + 24] << 8) + memory.memArray[i + 25];
-			printf(" %02d", month);
+			ushort modifyDate = (memory.memArray[i + 24] << 8) + memory.memArray[i + 25];
+			printf(" %02d-",((modifyDate & 0x780) >> 7) + 1);
+			printf("%02d-", modifyDate >> 11);
+			printf("%02d", (modifyDate & 0x7F) + 1900);
+			ushort modifyTime = (memory.memArray[i + 22] << 8) + memory.memArray[i + 23];
+			printf("   %02d:", modifyTime >> 11);
+			printf("%02d:", (modifyTime & 0x7e0) >> 5);
+			printf("%02d", (modifyTime & 0x1F) * 2);
 		}    
 	}
 }
@@ -598,7 +604,7 @@ ushort getCurrTime(){
     time(&rawtime);
     ct = localtime (&rawtime);
     result |= ((ct->tm_hour & 0x1F) << 11); // Hour of day comes first (0-23)
-    result |= ((ct->tm_min & 0x3F) << 7); // then comes the minutes after the hour (0-59)
+    result |= ((ct->tm_min & 0x3F) << 5); // then comes the minutes after the hour (0-59)
     result |= (ct->tm_sec%30 & 0x1F); // and finally the number pair of seconds (0-29)
     return result;
 }
