@@ -621,10 +621,12 @@ ushort setFatChain(ushort pos, int size){
     if(count > 0){ // more bytes left in file
         setEntry(pos,findFreeFat(pos)); // set current FAT entry to point to new free FAT entry
         setFatChain(getEntry(pos),count); // set the chain for the referenced FAT entry
+        cout << "hello" << endl;
         return getEntry(pos); // return this entry's position
     }
     else{ // this is last FAT entry for the file
         setEntry(pos,0xFFF); // set this entry to point to 0xFFF
+        cout << "hello2" << endl;
         return 0xFFF;
     }
 }
