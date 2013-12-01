@@ -257,11 +257,14 @@ void setFirstDirectoryBytes(){
     bool last = true;
     for(;i >= FIRST_FILE_BYTE; i-=32){
         if(memory.memArray[i+1] == 0){
-            if(last)
+            if(last){
                 memory.memArray[i] = 0x00;
+            }
             else
                 memory.memArray[i] = 0xE5;
         }
+        else
+            last = false; 
     }
 }
 
