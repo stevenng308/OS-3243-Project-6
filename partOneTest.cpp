@@ -623,9 +623,10 @@ ushort setFatChain(ushort pos, int size){
         setFatChain(getEntry(pos),count); // set the chain for the referenced FAT entry
         return getEntry(pos); // return this entry's position
     }
-    else // this is last FAT entry for the file
+    else{ // this is last FAT entry for the file
         setEntry(pos,0xFFF); // set this entry to point to 0xFFF
         return 0xFFF;
+    }
 }
 
 /**
