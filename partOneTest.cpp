@@ -617,6 +617,7 @@ void createFile(byte n[8], byte e[3], byte a, ushort r, ushort ct, ushort cd, us
 * param size the size of the file, or what's left of it at this point
 */
 ushort setFatChain(ushort pos, int size){
+    cout << "size: " << size << endl;
     int count = size - 512;
     if(count > 0){ // more bytes left in file
         setEntry(pos,findFreeFat(pos)); // set current FAT entry to point to new free FAT entry
