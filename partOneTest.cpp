@@ -554,10 +554,13 @@ int getDirectoryByte(string str){
 */
 ushort getCurrDate(){
     ushort result = 0;
-    struct tm cd;
-    result |= ((cd.tm_mday & 0x1F) << 11); // Day of month goes first (1-31)
-    result |= ((cd.tm_mon & 0x0F) << 7); // then comes the month since January
-    result |= (cd.tm_year & 0x7F); // and finally the year since 1990
+    time_t rawtime;
+    struct tm *cd;
+    time (&rawtime);
+    cd = localtime (&rawtime);
+    result |= ((cd->tm_mday & 0x1F) << 11); // Day of month goes first (1-31)
+    result |= ((cd->tm_mon & 0x0F) << 7); // then comes the month since January
+    result |= (cd->tm_year & 0x7F); // and finally the year since 1990
     return result;
 }
 
@@ -568,10 +571,13 @@ ushort getCurrDate(){
 */
 ushort getCurrTime(){
     ushort result = 0; 
-    struct tm ct;
-    result |= ((ct.tm_hour & 0x1F) << 11); // Hour of day comes first (0-23)
-    result |= ((ct.tm_min & 0x3F) << 7); // then comes the minutes after the hour (0-59)
-    result |= (ct.tm_sec%30 & 0x1F); // and finally the number pair of seconds (0-29)
+    time_t rawtime;
+    struct tm *ct;
+    time(&rawtime);
+    ct = localtime (&rawtime);
+    result |= ((ct->tm_hour & 0x1F) << 11); // Hour of day comes first (0-23)
+    result |= ((ct->tm_min & 0x3F) << 7); // then comes the minutes after the hour (0-59)
+    result |= (ct->tm_sec%30 & 0x1F); // and finally the number pair of seconds (0-29)
     return result;
 }
 
