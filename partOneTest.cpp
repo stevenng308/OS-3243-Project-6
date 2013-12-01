@@ -363,7 +363,7 @@ void copyFileToDisk(){
         iFile.seekg (0, ios::end);
         finish = iFile.tellg();
         iFile.close();
-        int s = (finish-start) & 0xFFFF;
+        int s = (finish-start) & 0xFFFFFFFF;
         if(s <= freeFatEntries * 512){
             createFile(n,e,a,r,ct,cd,lad,i,lmt,lmd,fls,s);
         }
@@ -617,17 +617,14 @@ void createFile(byte n[8], byte e[3], byte a, ushort r, ushort ct, ushort cd, us
 * param size the size of the file, or what's left of it at this point
 */
 ushort setFatChain(ushort pos, int size){
-    cout << "size: " << size << endl;
     int count = size - 512;
     if(count > 0){ // more bytes left in file
         setEntry(pos,findFreeFat(pos)); // set current FAT entry to point to new free FAT entry
         setFatChain(getEntry(pos),count); // set the chain for the referenced FAT entry
-        cout << "hello" << endl;
         return getEntry(pos); // return this entry's position
     }
     else{ // this is last FAT entry for the file
         setEntry(pos,0xFFF); // set this entry to point to 0xFFF
-        cout << "hello2" << endl;
         return 0xFFF;
     }
 }
@@ -721,13 +718,23 @@ void listFatChain(){
         int fatsNeeded =  ceil(((memory.memArray[startIndex+28] << 24) + (memory.memArray[startIndex+29] << 16) + (memory.memArray[startIndex+30] << 8) + memory.memArray[startIndex+31])/(double)SECTOR_SIZE);
         ushort FATs[fatsNeeded]; 
         printFatChain(((memory.memArray[startIndex+26] << 8) + memory.memArray[startIndex+27]),FATs,0);
-        cout << "Logical:  ";
+        cout << "\nLogical:  \n";
         for(int i = 0; i < fatsNeeded; i++){
-            printf("%03d ", FATs[i]-2);
+            if(i % 15 == 0){
+                printf("%04d-%04d: ",i,min(i+14,fatsNeeded-1));
+            }
+            printf("%04d ", FATs[i]-2);
+            if((i+1) % 15 == 0)
+                cout << endl;
         }
-        cout << "\nPhysical: ";
+        cout << "\n\nPhysical: \n";
         for(int i = 0; i < fatsNeeded; i++){
-            printf("%03d ",FATs[i]+33-2);
+            if(i % 15 == 0){
+                printf("%04d-%04d: ",i,min(i+14,fatsNeeded-1));
+            }
+            printf("%04d ",FATs[i]+33-2);
+            if((i+1) % 15 == 0)
+                cout << endl;
         }
         cout << "\n";
     }
