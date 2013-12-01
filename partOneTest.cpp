@@ -718,7 +718,7 @@ void listFatChain(){
         printFatChain(((memory.memArray[startIndex+26] << 8) + memory.memArray[startIndex+27]),FATs,0);
         cout << "Logical:  ";
         for(int i = 0; i < fatsNeeded; i++){
-            printf("%03d ", FATs[i] - 2);
+            printf("%03d ", FATs[i]-2);
         }
         cout << "\nPhysical: ";
         for(int i = 0; i < fatsNeeded; i++){
@@ -821,7 +821,7 @@ MainMemory::MainMemory()
 {
 	/*for (int i = 0; i < BYTECOUNT; i++)
 	{
-		memArray[i] = 157;
+		memArray[i] = 0;
 	}*/
 }
 
