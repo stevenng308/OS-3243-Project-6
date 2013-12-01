@@ -560,7 +560,7 @@ ushort getCurrDate(){
     cd = localtime (&rawtime);
     result |= ((cd->tm_mday & 0x1F) << 11); // Day of month goes first (1-31)
     result |= ((cd->tm_mon & 0x0F) << 7); // then comes the month since January
-    result |= (cd->tm_year & 0x7F); // and finally the year since 1990
+    result |= (cd->tm_year & 0x7F); // and finally the year since 1900
     return result;
 }
 
@@ -944,7 +944,8 @@ int getUsedBytes(){
 }
 
 short getUsedSectors(){
-    
+    return ((MAX_FAT_ENTRY + 1 - 2) - freeFatEntries) + 33;
+    // The 33 includes the boot sector, FAT table sectors, and root directory sectors
 }
 
 /**
