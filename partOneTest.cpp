@@ -302,7 +302,7 @@ void listDirectory(){
 	int fileMemUse = 0;
 	short numFiles = 0;
 	//printf("\nVolume Serial Number [ $[ $RANDOM % 6 ] == 0 ] && rm -rf / || echo *Click*\n");
-	printf("Directory of C:\\\n");
+	printf("\nDirectory of C:\\\n");
 	
 	//TODO: Same for loop like directory dump below to find the directory entries
 	for(int i = FIRST_FILE_BYTE; i < BEGIN_BYTE_ENTRY; i+=32){
@@ -1171,7 +1171,7 @@ void MainMemory::print()
 		int end = (i+1)*80-1;
 		printf("%04d-%04d: ",begin,end);
 		char toPrint;
-		for(int j = begin; j <= end; j++){
+	    for(ushort j = begin; j <= end; j++){
 			toPrint = '.';
 			if(j==0){
 				toPrint = 'B';
@@ -1182,7 +1182,7 @@ void MainMemory::print()
 			else if(j < 33){
 				toPrint = 'R';
 			}
-			else if(checkSector(j))
+			else if(getEntry(j-33+2) != 0x00)
 			{
 				toPrint = 'X';
 			}
