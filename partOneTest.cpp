@@ -864,7 +864,7 @@ void sectorDump(){
 void writeOutFile(string s){
     ofstream outfile(s.c_str(),ofstream::out);
     for(int i = 0; i < 512; i++)
-        outfile << 0;
+        outfile << "\0";
     outfile.close();
 }
 
