@@ -84,7 +84,7 @@ int getUsedBytes();
 short getUsedSectors();
 short *filesAndSectorStats();
 void updateAccessDate(int startByte);
-void writeOutFile(string s);
+void writeBackupFloppy(string s);
 
 // Requested User Options
 void listDirectory();   // option # 1
@@ -97,7 +97,6 @@ void listFatChain();    // option # 8
 void sectorDump();      // option # 9
 
 int main(){
-    writeOutFile("hello.txt");
     /*
     ifstream ifile("fdd.flp",std::ifstream::in);
     byte b = ifile.get();
@@ -164,11 +163,14 @@ int main(){
             case 9:
                 sectorDump();
                 break;
+            case 10:
+                writeBackupFloppy("fdd.flp");
+                break;
             default:
                 return 0;
         }
     }
-    while(answer >= 1 && answer <= 9);
+    while(answer >= 1 && answer <= 10);
     memory.print();
     return 0;
 }
@@ -187,6 +189,26 @@ void loadSystem()
 		b = ifile.get();
 		++c;
 	}
+}
+
+/**
+* writeBackupFloppy() method writes the current disk simulated in memory to an actual binary file
+* Then it calls dd from within the program to convert the binary file to flp format. 
+* param s the name of the new file to be created, the flp image will have the same filename.
+*/
+void writeBackupFloppy(string s){
+    ofstream outfile(s.c_str(), ofstream::binary/*ofstream::out | ios::binary*/);
+    byte* buffer = new byte[BYTECOUNT];
+    for(int i = 0; i < BYTECOUNT; i++)
+        buffer[i] = memory.memArray[i]; // copy the byte from simulated disk to binary file
+    delete[] buffer;
+    outfile.close();
+    string res = "dd status=noxfer conv=notrunc if=";
+    res.append(s);
+    res.append(" of=floppy.flp");
+    int a = system(res.c_str());
+    if(a==-1)
+        cout << "Error converting the binary file to flp image\n";
 }
 
 /**
@@ -365,7 +387,6 @@ void directoryDump(){
             updateAccessDate(i); 
         }
     }
-
 }
 
 /**
@@ -859,13 +880,6 @@ void sectorDump(){
         }
         cout << endl;
     }
-}
-
-void writeOutFile(string s){
-    ofstream outfile(s.c_str(),ofstream::out);
-    for(int i = 0; i < 512; i++)
-        outfile << "\0";
-    outfile.close();
 }
 
 /**
