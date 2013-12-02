@@ -85,7 +85,8 @@ short getUsedSectors();
 short *filesAndSectorStats();
 void updateAccessDate(int startByte);
 void writeOutFile(string s);
-void writeToDisk(ushort pos, byte d);
+void writeToDisk();
+void writeBackupFloppy(string s);
 
 // Requested User Options
 void listDirectory();   // option # 1
@@ -98,7 +99,6 @@ void listFatChain();    // option # 8
 void sectorDump();      // option # 9
 
 int main(){
-    writeOutFile("hello.txt");
     /*
     ifstream ifile("fdd.flp",std::ifstream::in);
     byte b = ifile.get();
@@ -164,13 +164,16 @@ int main(){
                 break;
             case 9:
                 sectorDump();
-                writeToDisk(BEGIN_BYTE_ENTRY, memory.memArray[BEGIN_BYTE_ENTRY]);
+                writeToDisk();
+                break;
+            case 10:
+                writeBackupFloppy("current.bin");
                 break;
             default:
                 return 0;
         }
     }
-    while(answer >= 1 && answer <= 9);
+    while(answer >= 1 && answer <= 10);
     memory.print();
     return 0;
 }
@@ -189,6 +192,26 @@ void loadSystem()
 		b = ifile.get();
 		++c;
 	}
+}
+
+/**
+* writeBackupFloppy() method writes the current disk simulated in memory to an actual binary file
+* Then it calls dd from within the program to convert the binary file to flp format. 
+* param s the name of the new file to be created, the flp image will have the same filename.
+*/
+void writeBackupFloppy(string s){
+    ofstream outfile(s.c_str(), ofstream::binary/*ofstream::out | ios::binary*/);
+    byte* buffer = new byte[BYTECOUNT];
+    for(int i = 0; i < BYTECOUNT; i++)
+        buffer[i] = memory.memArray[i]; // copy the byte from simulated disk to binary file
+    delete[] buffer;
+    outfile.close();
+    string res = "dd status=noxfer conv=notrunc if=";
+    res.append(s);
+    res.append(" of=floppy.flp");
+    int a = system(res.c_str());
+    if(a==-1)
+        cout << "Error converting the binary file to flp image\n";
 }
 
 /**
@@ -367,7 +390,6 @@ void directoryDump(){
             updateAccessDate(i); 
         }
     }
-
 }
 
 /**
@@ -875,15 +897,15 @@ void writeOutFile(string s){
     outfile.close();
 }
 
-void writeToDisk(ushort pos, byte d){
+void writeToDisk(){
     ofstream outbin("fd.flp", ofstream::binary);
-    ushort start = pos - 1;
-    outbin.seekp(start);
-    for (int i = 0; i < 30; i++)
-    {
-		unsigned char *o = &memory.memArray[BEGIN_BYTE_ENTRY + i];
-		outbin.write((char*)o, sizeof(byte));
-		outbin.seekp(start + 8);
+    byte* buffer;
+	outbin.seekp(0);
+	for (int i = 0; i < BYTECOUNT; i++)
+	{
+		buffer = &memory.memArray[i];
+		outbin.write((char*)buffer, sizeof(byte));
+		outbin.seekp(outbin.tellp());
 	}
     outbin.close(); 
 }
