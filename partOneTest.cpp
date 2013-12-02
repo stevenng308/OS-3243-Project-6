@@ -313,7 +313,11 @@ void listDirectory(){
 		}    
 	}
 	printf("\n       %3d File(s)    %7d bytes used\n", numFiles, fileMemUse);
-	printf("                      %7d bytes free\n", freeFatEntries * SECTOR_SIZE); //leave comment here
+	printf("                      %7d bytes free\n", freeFatEntries * SECTOR_SIZE);
+    // In the line above, the value of freeFatEntries is equal to the number of free sectors in range [33-2879]
+    // Since bytes that are equal to 0x00 and reside in a file's last sector cannot be considered 'free', we do 
+    // not count them as free bytes. Free bytes therefore only includes bytes within sectors 33-2879 that are not 
+    // in a sector owned by any file.
 }
 
 /**
