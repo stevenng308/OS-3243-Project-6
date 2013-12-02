@@ -539,7 +539,6 @@ void renameFile(){
             memory.memArray[byteStart+i] = e[i-8];
             
         //update modify date and time
-        updateAccessDate(byteStart);
         ushort mt = getCurrTime();
 		ushort md = getCurrDate();
 		memory.memArray[byteStart+22] = mt >> 8;
@@ -614,6 +613,7 @@ int getDirectoryByte(string str){
             }
             if(nameMatch && extMatch){
                 found = i;
+                updateAccessDate(i);
                 break; // leave loop at first instance of the file
             }
         }
@@ -910,7 +910,7 @@ ushort findFreeFat(ushort a)
 }
 
 /**
- * Update the access date of a file
+ * Update the access date of a file using the file's directory entry's first byte
  */
 void updateAccessDate(int startByte)
 {
