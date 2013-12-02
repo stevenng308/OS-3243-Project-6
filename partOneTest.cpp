@@ -124,6 +124,16 @@ int main(){
     do{
         cout << menuOptions;
         cin >> answer;
+        bool printed = false;
+        while(!cin){
+            cin.clear();
+            cin.ignore();
+            if(!printed){
+                cout << "\nInvalid selection, please select a number in range [0-9]...\n\n";
+                printed = true;
+            }
+            cin >> answer;
+        }
         switch(answer){
             case 1:
                 listDirectory();
@@ -820,8 +830,9 @@ void sectorDump(){
     int sector;
     cout << "\nSelect physical sector to display: ";
     cin >> sector;
-    if(sector < 0 || sector > 2879){
+    if(!cin || sector < 0 || sector > 2879){
         cout << "Invalid sector selection, must be within range [0-2879]\n";
+        cin.clear();
         return;
     }
     int secByte = sector * SECTOR_SIZE;
