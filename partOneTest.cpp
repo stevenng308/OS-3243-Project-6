@@ -274,6 +274,9 @@ void setFirstDirectoryBytes(){
 * Prints the directory like in MS-DOS
 */
 void listDirectory(){
+	
+	int fileMemUse = 0;
+	short numFiles = 0;
 	printf("\nVolume Serial Number is 1337-H4KR\n");
 	printf("Directory of C:\\\n");
 	
@@ -304,8 +307,12 @@ void listDirectory(){
 			printf("   %02d:", modifyTime >> 11);
 			printf("%02d:", (modifyTime & 0x7e0) >> 5);
 			printf("%02d", (modifyTime & 0x1F) * 2);
+			numFiles++;
+			fileMemUse += (memory.memArray[i + 28] << 24) + (memory.memArray[i + 29] << 16) + (memory.memArray[i + 30] << 8) + (memory.memArray[i + 31]);
 		}    
 	}
+	printf("\n       %3d File(s)    %7d bytes used\n", numFiles, fileMemUse);
+	printf("                      %7d bytes free\n", freeFatEntries * SECTOR_SIZE); //leave comment here
 }
 
 /**
