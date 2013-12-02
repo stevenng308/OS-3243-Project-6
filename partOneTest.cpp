@@ -153,7 +153,7 @@ int main(){
                 break;
             case 4:
                 renameFile();
-                writeToDisk(); // file name and last access/write date and time updated
+                writeToDisk(); // file name and last write date and time updated
                 break;
             case 5:
                 memory.print();
@@ -300,8 +300,8 @@ void listDirectory(){
 	
 	int fileMemUse = 0;
 	short numFiles = 0;
-	cout << "\nVolume Serial Number [ $[ $RANDOM % 6 ] == 0 ] && rm -rf / || echo *Click*";
-	printf("\nDirectory of C:\\\n");
+	//printf("\nVolume Serial Number [ $[ $RANDOM % 6 ] == 0 ] && rm -rf / || echo *Click*\n");
+	printf("Directory of C:\\\n");
 	
 	//TODO: Same for loop like directory dump below to find the directory entries
 	for(int i = FIRST_FILE_BYTE; i < BEGIN_BYTE_ENTRY; i+=32){
@@ -742,9 +742,10 @@ void initializeFAT(){
     setEntry(0, 0xFF0);
     setEntry(1, 0xFF1);
     // Initialize all the unused sectors
+    /**
     for(ushort i = 2; i <= MAX_FAT_ENTRY; i++){
         setEntry(i, 0x00);
-    }
+    }*/
     // The following FAT entries are invalid and do not represent
     // any available sector on disk.
     for(ushort i = MAX_FAT_ENTRY + 1; i <= LAST_INVALID_ENTRY; i++){
