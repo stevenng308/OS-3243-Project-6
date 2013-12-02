@@ -84,6 +84,7 @@ int getUsedBytes();
 short getUsedSectors();
 short *filesAndSectorStats();
 void updateAccessDate(int startByte);
+void writeOutFile(string s);
 
 // Requested User Options
 void listDirectory();   // option # 1
@@ -96,6 +97,7 @@ void listFatChain();    // option # 8
 void sectorDump();      // option # 9
 
 int main(){
+    writeOutFile("hello.txt");
     /*
     ifstream ifile("fdd.flp",std::ifstream::in);
     byte b = ifile.get();
@@ -289,7 +291,7 @@ void listDirectory(){
 	
 	int fileMemUse = 0;
 	short numFiles = 0;
-	printf("\nVolume Serial Number [ $[ $RANDOM % 6 ] == 0 ] && rm -rf / || echo *Click*\n");
+	//printf("\nVolume Serial Number [ $[ $RANDOM % 6 ] == 0 ] && rm -rf / || echo *Click*\n");
 	printf("Directory of C:\\\n");
 	
 	//TODO: Same for loop like directory dump below to find the directory entries
@@ -827,7 +829,6 @@ void listFatChain(){
 * character representation on the right-hand side of the output.
 */
 void sectorDump(){
-    int a = system("firefox");
     int sector;
     cout << "\nSelect physical sector to display: ";
     cin >> sector;
@@ -858,6 +859,13 @@ void sectorDump(){
         }
         cout << endl;
     }
+}
+
+void writeOutFile(string s){
+    ofstream outfile(s.c_str(),ofstream::out);
+    for(int i = 0; i < 512; i++)
+        outfile << 0;
+    outfile.close();
 }
 
 /**
