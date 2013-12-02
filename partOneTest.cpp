@@ -275,10 +275,45 @@ void setFirstDirectoryBytes(){
 * Prints the directory like in MS-DOS
 */
 void listDirectory(){
+	
+	int fileMemUse = 0;
+	short numFiles = 0;
 	printf("\nVolume Serial Number is 1337-H4KR\n");
 	printf("Directory of C:\\\n");
 	
 	//TODO: Same for loop like directory dump below to find the directory entries
+	for(int i = FIRST_FILE_BYTE; i < BEGIN_BYTE_ENTRY; i+=32){
+        if(memory.memArray[i] == 0x00) // no more files to see here...
+            break;
+        else if(memory.memArray[i] != 0xE5){ // actually going to print a directory listing
+			char fname[8];
+            char ext[3];
+            for(int j = 0; j < 32; j++){
+				if(j >= 0 && j < 8)
+                    fname[j] = memory.memArray[i+j];
+                else if(j < 11)
+                    ext[j-8] = memory.memArray[i+j];
+			}
+			string fname_string(fname);
+			fname_string = fname_string.substr(fname_string.find_first_not_of(" "),8);
+			string ext_string(ext);
+			ext_string = ext_string.substr(ext_string.find_first_not_of(" "),3);
+			printf("\n%-8s %3s", fname_string.c_str(), ext_string.c_str()); //print filename and ext
+			printf("   %7d", (memory.memArray[i + 28] << 24) + (memory.memArray[i + 29] << 16) + (memory.memArray[i + 30] << 8) + (memory.memArray[i + 31])); //print file size
+			ushort modifyDate = (memory.memArray[i + 24] << 8) + memory.memArray[i + 25];
+			printf(" %02d-",((modifyDate & 0x780) >> 7) + 1);
+			printf("%02d-", modifyDate >> 11);
+			printf("%02d", (modifyDate & 0x7F) + 1900);
+			ushort modifyTime = (memory.memArray[i + 22] << 8) + memory.memArray[i + 23];
+			printf("   %02d:", modifyTime >> 11);
+			printf("%02d:", (modifyTime & 0x7e0) >> 5);
+			printf("%02d", (modifyTime & 0x1F) * 2);
+			numFiles++;
+			fileMemUse += (memory.memArray[i + 28] << 24) + (memory.memArray[i + 29] << 16) + (memory.memArray[i + 30] << 8) + (memory.memArray[i + 31]);
+		}    
+	}
+	printf("\n       %3d File(s)    %7d bytes used\n", numFiles, fileMemUse);
+	printf("                      %7d bytes free\n", freeFatEntries * SECTOR_SIZE); //leave comment here
 }
 
 /**
@@ -577,7 +612,7 @@ ushort getCurrTime(){
     time(&rawtime);
     ct = localtime (&rawtime);
     result |= ((ct->tm_hour & 0x1F) << 11); // Hour of day comes first (0-23)
-    result |= ((ct->tm_min & 0x3F) << 7); // then comes the minutes after the hour (0-59)
+    result |= ((ct->tm_min & 0x3F) << 5); // then comes the minutes after the hour (0-59)
     result |= (ct->tm_sec%30 & 0x1F); // and finally the number pair of seconds (0-29)
     return result;
 }
@@ -994,9 +1029,9 @@ void MainMemory::print()
 	float freeSectorsPercentage = 100.0 * (numOfSectors - usedSectors) / numOfSectors;
 	float sectorsPerFile = 100.0 * numOfSectors / numOfFiles;
 	
-	printf("CAPACITY: %7ib     USED: %-7ib (%3.1f%%)   FREE: %-7ib (%3.1f%%)\n", BYTECOUNT, usedBytes, usedBytesPercentage, numFreeBytes, freeBytesPercentage);
+	printf("CAPACITY: %7ib     USED: %7ib (%3.1f%%)   FREE: %7ib (%3.1f%%)\n", BYTECOUNT, usedBytes, usedBytesPercentage, numFreeBytes, freeBytesPercentage);
 	printf("SECTORS: %4i          USED: %-4i (%5.1f%%)      FREE: %-4i (%5.1f%%)\n", numOfSectors, usedSectors, usedSectorsPercentage, (numOfSectors - usedSectors), freeSectorsPercentage);
-	printf("FILES: %-5i      SECTORS/FILE: %-4f     LARGEST: %-4i-s    SMALLEST: %-4is\n", numOfFiles, sectorsPerFile, largestSector, smallestSector);
+	printf("FILES: %-5i      SECTORS/FILE: %-4f     LARGEST: %4is    SMALLEST: %4is\n", numOfFiles, sectorsPerFile, largestSector, smallestSector);
 	cout << "\nDISK USAGE BY SECTOR:\n";
 	cout << bar;
 	for(int i = 0; i < 36; i++){
