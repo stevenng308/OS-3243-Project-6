@@ -87,6 +87,7 @@ void updateAccessDate(int startByte);
 void writeOutFile(string s);
 void writeToDisk();
 void writeBackupFloppy(string s);
+void writeBackupFloppy();
 
 // Requested User Options
 void listDirectory();   // option # 1
@@ -167,7 +168,7 @@ int main(){
                 writeToDisk();
                 break;
             case 10:
-                writeBackupFloppy("current.bin");
+                writeBackupFloppy();
                 break;
             default:
                 return 0;
@@ -199,11 +200,13 @@ void loadSystem()
 * Then it calls dd from within the program to convert the binary file to flp format. 
 * param s the name of the new file to be created, the flp image will have the same filename.
 */
-void writeBackupFloppy(string s){
+void writeBackupFloppy(){
+    string s = "current.bin";
     ofstream outfile(s.c_str(), ofstream::binary/*ofstream::out | ios::binary*/);
     byte* buffer = new byte[BYTECOUNT];
     for(int i = 0; i < BYTECOUNT; i++)
         buffer[i] = memory.memArray[i]; // copy the byte from simulated disk to binary file
+    outfile.write ((char*)buffer,BYTECOUNT);
     delete[] buffer;
     outfile.close();
     string res = "dd status=noxfer conv=notrunc if=";
