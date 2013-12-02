@@ -88,6 +88,7 @@ void writeOutFile(string s);
 void writeToDisk();
 void writeBackupFloppy(string s);
 void writeBackupFloppy();
+string getNameBySector(int num);
 
 // Requested User Options
 void listDirectory();   // option # 1
@@ -734,6 +735,47 @@ int findEmptyDirectory(){
     return -1;
 }
 
+string getNameBySector(int num){
+    int fatsNeeded;
+    int byteIndex = -1;
+    bool foundIndex = false;
+    for(int i = FIRST_FILE_BYTE; i < BEGIN_BYTE_ENTRY; i+= 32){
+        if(memory.memArray[i] != 0xE5 && memory.memArray[i] != 0x00){
+            fatsNeeded =  ceil(((memory.memArray[i+28] << 24) + (memory.memArray[i+29] << 16) + (memory.memArray[i+30] << 8) + memory.memArray[i+31])/(double)SECTOR_SIZE);
+            ushort FATs[fatsNeeded];
+            printFatChain(((memory.memArray[i+26] << 8) + memory.memArray[i+27]),FATs,0);
+            for(int j = 0; j < fatsNeeded; j++){
+                if(FATs[j] + 33 - 2 == num){
+                    byteIndex = i;
+                    foundIndex = true;
+                    break;
+                }
+            }
+        }
+        if(foundIndex)
+            break;
+    }
+    // Now if we've found the index of the first byte in the correct directory, return the name
+    char fname[8];
+    char ext[3];
+    if(byteIndex == -1)
+        return "bob hope";
+    for(int j = 0; j < 32; j++){
+        if(j >= 0 && j < 8)
+            fname[j] = memory.memArray[byteIndex+j];
+        else if(j < 11)
+            ext[j-8] = memory.memArray[byteIndex+j];
+    }
+    string fname_string(fname);
+    fname_string = fname_string.substr(fname_string.find_first_not_of(" "),8);
+    string ext_string(ext);
+    ext_string = ext_string.substr(ext_string.find_first_not_of(" "),3);
+    //printf("%8s.%3s\n",fname_string.c_str(),ext_string.c_str());
+    fname_string.append(".");
+    fname_string.append(ext_string);
+    return fname_string;
+}
+
 /**
 * Method that sets first two FAT entries as specified in assignment, assigns all valid entries to 0x00,
 * and assigns all invalid entries that do no represent physical sectors on disk to 0xFF7 (bad sector)
@@ -856,6 +898,8 @@ void sectorDump(){
         cin.clear();
         return;
     }
+    getDirectoryByte(getNameBySector(sector)); // calls getDirectoryByte passing in the name of the file
+    // This in turn will call the updateAccessDate method on the file being accessed
     int secByte = sector * SECTOR_SIZE;
     for(int i = 0; i < SECTOR_SIZE; i+=20){
         printf("%03d: ",i);
