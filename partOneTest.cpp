@@ -83,6 +83,7 @@ void printFatChain(ushort num,ushort FATs[], int index);
 int getUsedBytes();
 short getUsedSectors();
 short *filesAndSectorStats();
+void updateAccessDate(int startByte);
 
 // Requested User Options
 void listDirectory();   // option # 1
@@ -318,12 +319,13 @@ void listDirectory(){
 			printf("   %02d:", modifyTime >> 11);
 			printf("%02d:", (modifyTime & 0x7e0) >> 5);
 			printf("%02d", (modifyTime & 0x1F) * 2);
+			updateAccessDate(i);
 			numFiles++;
 			fileMemUse += (memory.memArray[i + 28] << 24) + (memory.memArray[i + 29] << 16) + (memory.memArray[i + 30] << 8) + (memory.memArray[i + 31]);
 		}    
 	}
-	printf("\n       %3d File(s)    %7d bytes used\n", numFiles, fileMemUse);
-	printf("                      %7d bytes free\n", freeFatEntries * SECTOR_SIZE);
+	printf("\n       %3d File(s)        %7d bytes used\n", numFiles, fileMemUse);
+	printf("                          %7d bytes free\n", freeFatEntries * SECTOR_SIZE);
     // In the line above, the value of freeFatEntries is equal to the number of free sectors in range [33-2879]
     // Since bytes that are equal to 0x00 and reside in a file's last sector cannot be considered 'free', we do 
     // not count them as free bytes. Free bytes therefore only includes bytes within sectors 33-2879 that are not 
@@ -357,7 +359,8 @@ void directoryDump(){
             fname_string = fname_string.substr(fname_string.find_first_not_of(" "),8);
             string ext_string(ext);
             ext_string = ext_string.substr(ext_string.find_first_not_of(" "),3);
-            printf("%-8s %3s\n",fname_string.c_str(),ext_string.c_str()); 
+            printf("%-8s %3s\n",fname_string.c_str(),ext_string.c_str());
+            updateAccessDate(i); 
         }
     }
 
@@ -386,6 +389,12 @@ void copyFileToDisk(){
     string extension;
     cout << "\nFilename to copy to the simulated disk: ";
     cin >> fHandle;
+    int byteStart = getDirectoryByte(fHandle);
+    if (byteStart != -1)
+    {
+		cout << "A File with the same name exists. Please give your file a different name." << endl;
+		return;
+	}
     extension = fHandle.substr(fHandle.find(".")+1,3);
     fName = fHandle.substr(0,fHandle.find("."));
     fHandle = fName+'.'+extension;
@@ -496,6 +505,12 @@ void renameFile(){
         string newName, newExt;
         cout << "New name: ";
         cin >> nHandle;
+        int newByteStart = getDirectoryByte(nHandle);
+        if(newByteStart != -1)
+        {
+			cout << "Duplicate file name entered. Please enter a different file name." << endl;
+			return;
+		}
         newExt = nHandle.substr(nHandle.find(".")+1,3);
         newName = nHandle.substr(0,nHandle.find("."));
     
@@ -522,6 +537,14 @@ void renameFile(){
             memory.memArray[byteStart+i] = n[i];   
         for(int i = 8; i < 11; i++)
             memory.memArray[byteStart+i] = e[i-8];
+            
+        //update modify date and time
+        ushort mt = getCurrTime();
+		ushort md = getCurrDate();
+		memory.memArray[byteStart+22] = mt >> 8;
+		memory.memArray[byteStart+23] = mt & 0xFF;
+		memory.memArray[byteStart+24] = md >> 8;
+		memory.memArray[byteStart+25] = md & 0xFF;
     }
     else
         cout << "File not found\n";
@@ -590,6 +613,7 @@ int getDirectoryByte(string str){
             }
             if(nameMatch && extMatch){
                 found = i;
+                updateAccessDate(i);
                 break; // leave loop at first instance of the file
             }
         }
@@ -884,6 +908,16 @@ ushort findFreeFat(ushort a)
 	}
     cout << "Unable to find free FAT entry\n";
 	return -1;
+}
+
+/**
+ * Update the access date of a file using the file's directory entry's first byte
+ */
+void updateAccessDate(int startByte)
+{
+	ushort ad = getCurrDate();
+	memory.memArray[startByte + 18] = ad >> 8;
+	memory.memArray[startByte + 19] = ad & 0xFF;
 }
 
 MainMemory::MainMemory()
