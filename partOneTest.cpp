@@ -864,7 +864,7 @@ void listFatChain(){
             if(i % 15 == 0){
                 printf("%04d-%04d: ",i,min(i+14,fatsNeeded-1));
             }
-            printf("%04d ", FATs[i]-2);
+            printf("%04d ", FATs[i]);
             if((i+1) % 15 == 0)
                 cout << endl;
         }
