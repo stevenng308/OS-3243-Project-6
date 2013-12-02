@@ -85,6 +85,7 @@ short getUsedSectors();
 short *filesAndSectorStats();
 void updateAccessDate(int startByte);
 void writeOutFile(string s);
+void writeToDisk(ushort pos, byte d);
 
 // Requested User Options
 void listDirectory();   // option # 1
@@ -163,6 +164,7 @@ int main(){
                 break;
             case 9:
                 sectorDump();
+                writeToDisk(BEGIN_BYTE_ENTRY, memory.memArray[BEGIN_BYTE_ENTRY]);
                 break;
             default:
                 return 0;
@@ -511,6 +513,11 @@ void renameFile(){
         if(newByteStart != -1)
         {
 			cout << "Duplicate file name entered. Please enter a different file name." << endl;
+			return;
+		}
+		else if (nHandle.length() == 0)
+		{
+			cout << "A file name cannot be empty." << endl;
 			return;
 		}
         newExt = nHandle.substr(nHandle.find(".")+1,3);
@@ -866,6 +873,19 @@ void writeOutFile(string s){
     for(int i = 0; i < 512; i++)
         outfile << 0;
     outfile.close();
+}
+
+void writeToDisk(ushort pos, byte d){
+    ofstream outbin("fd.flp", ofstream::binary);
+    ushort start = pos - 1;
+    outbin.seekp(start);
+    for (int i = 0; i < 30; i++)
+    {
+		unsigned char *o = &memory.memArray[BEGIN_BYTE_ENTRY + i];
+		outbin.write((char*)o, sizeof(byte));
+		outbin.seekp(start + 8);
+	}
+    outbin.close(); 
 }
 
 /**
