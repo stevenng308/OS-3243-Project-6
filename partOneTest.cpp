@@ -82,6 +82,7 @@ int getDirectoryByte(string str);
 void printFatChain(ushort num,ushort FATs[], int index);
 int getUsedBytes();
 short getUsedSectors();
+short *filesAndSectorStats();
 
 // Requested User Options
 void listDirectory();   // option # 1
@@ -925,9 +926,8 @@ int getUsedBytes(){
     // 0xE5, add 32 to used.
     cout << "Used 2 - after FAT tables : "<<used<<endl;
     for(int i = FIRST_FILE_BYTE; i < BEGIN_BYTE_ENTRY; i += 32){
-        if(memory.memArray[i] != 0x00 && memory.memArray[i] != 0xE5){
+        if(memory.memArray[i] != 0x00 && memory.memArray[i] != 0xE5)
             used += 32;
-        }
         else if(memory.memArray[i] == 0xE5)
             ++used;
         else
@@ -948,6 +948,30 @@ short getUsedSectors(){
     // The 33 includes the boot sector, FAT table sectors, and root directory sectors
 }
 
+short *filesAndSectorStats(){
+    short smallest = -1, largest = 2881, numOfFiles = 0;
+    bool smallestSet = false, largestSet = false;
+    short *results = new short[3];
+    for(int i = FIRST_FILE_BYTE; i < BEGIN_BYTE_ENTRY; i += 32){
+        short currSize =  ceil(((memory.memArray[i+28] << 24) + (memory.memArray[i+29] << 16) + (memory.memArray[i+30] << 8) + memory.memArray[i+31])/(double)SECTOR_SIZE);
+        if(memory.memArray[i] != 0x00 && memory.memArray[i] != 0xE5){
+            if(currSize > 0 && (currSize < smallest || smallestSet == false)){
+                smallest = currSize;
+                smallestSet = true;
+            }
+            if(currSize > 0 && (currSize > largest || largestSet == false)){
+                largest = currSize;
+                largestSet = true;
+            }
+            ++numOfFiles;
+        }
+    }
+    results[0] = smallest;
+    results[1] = largest;
+    results[2] = numOfFiles;
+    return results;
+}
+
 /**
 * Prints the memory map showing the uasge of each sector
 */
@@ -956,9 +980,10 @@ void MainMemory::print()
 	//variables for usage map
 	int usedBytes = getUsedBytes();
 	short usedSectors = getUsedSectors();
-	short numOfFiles;
-	short largestSector; //largest num of sectors that a file is using
-	short smallestSector; //smallest num of sectors that a file is using
+    short *stats = filesAndSectorStats();
+	short numOfFiles = stats[2];
+	short largestSector = stats[1]; //largest num of sectors that a file is using
+	short smallestSector = stats[0]; //smallest num of sectors that a file is using
 	
 
 	float usedBytesPercentage = 100.0 * usedBytes / BYTECOUNT;
