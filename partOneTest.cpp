@@ -32,7 +32,7 @@ typedef unsigned char byte;
 
 string bar = "           |----+----|----+----|----+----|----+----|----+----|----+----|----+----|----+----\n";
 string menuOptions = "\nMenu:\n1) List Directory\n2) Copy file to disk\n3) Delete file\n4) Rename a file\n5) Usage map\n6) Directory dump\n7) FAT dump\n8) FAT chain\n9) Sector dump\n0) Quit\n> ";
-int freeFatEntries = MAX_FAT_ENTRY + 1 - 2; // added 1 to get quantity, subtract 2 since entries 0 and 1 are reserved
+int freeFatEntries; // added 1 to get quantity, subtract 2 since entries 0 and 1 are reserved
 
 struct MainMemory{
     byte memArray[BYTECOUNT]; // 0-511 is for the boot partition
@@ -750,6 +750,11 @@ void initializeFAT(){
     // any available sector on disk.
     for(ushort i = MAX_FAT_ENTRY + 1; i <= LAST_INVALID_ENTRY; i++){
         setEntry(i, 0xFF7);
+    }
+    freeFatEntries = 0;
+    for(int i = 2; i <= MAX_FAT_ENTRY; i++){
+        if(getEntry(i) == 0)
+            ++freeFatEntries;
     }
 }
 
