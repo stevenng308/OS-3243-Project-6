@@ -153,7 +153,7 @@ int main(){
                 break;
             case 4:
                 renameFile();
-                writeToDisk(); // file name and last write date and time updated
+                writeToDisk(); // file name and last access/write date and time updated
                 break;
             case 5:
                 memory.print();
@@ -188,7 +188,7 @@ int main(){
 */
 void loadSystem()
 {
-	ifstream ifile("fd.flp",std::ifstream::in);
+	ifstream ifile("fd.flp",std::ifstream::in); //change fd.flp to fdd.flp
     byte b = ifile.get();
     int c = 0;
     while (ifile.good()){
@@ -300,7 +300,7 @@ void listDirectory(){
 	
 	int fileMemUse = 0;
 	short numFiles = 0;
-	//printf("\nVolume Serial Number [ $[ $RANDOM % 6 ] == 0 ] && rm -rf / || echo *Click*\n");
+	cout << "\nVolume Serial Number [ $[ $RANDOM % 6 ] == 0 ] && rm -rf / || echo *Click*" << endl;;
 	printf("Directory of C:\\\n");
 	
 	//TODO: Same for loop like directory dump below to find the directory entries
