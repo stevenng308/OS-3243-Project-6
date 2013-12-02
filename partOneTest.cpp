@@ -164,7 +164,7 @@ int main(){
                 sectorDump();
                 break;
             case 10:
-                writeBackupFloppy("fdd.flp");
+                writeBackupFloppy("current.bin");
                 break;
             default:
                 return 0;
