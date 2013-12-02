@@ -141,31 +141,37 @@ int main(){
         switch(answer){
             case 1:
                 listDirectory();
+                writeToDisk(); // file access date updated
                 break;
             case 2:
                 copyFileToDisk();
+                writeToDisk(); // file added to disk
                 break;
             case 3:
                 deleteFile();
+                writeToDisk(); // file removed from disk
                 break;
             case 4:
                 renameFile();
+                writeToDisk(); // file name and last write date and time updated
                 break;
             case 5:
                 memory.print();
                 break;
             case 6:
                 directoryDump();
+                writeToDisk(); // file access date updated
                 break;
             case 7:
                 fatDump();
                 break;
             case 8:
                 listFatChain();
+                writeToDisk(); // file access date updated
                 break;
             case 9:
                 sectorDump();
-                writeToDisk();
+                writeToDisk(); // file access date updated
                 break;
             default:
                 return 0;
