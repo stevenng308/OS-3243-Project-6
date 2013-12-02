@@ -803,6 +803,7 @@ void listFatChain(){
 * character representation on the right-hand side of the output.
 */
 void sectorDump(){
+    int a = system("firefox");
     int sector;
     cout << "\nSelect physical sector to display: ";
     cin >> sector;
