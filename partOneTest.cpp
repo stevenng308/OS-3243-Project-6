@@ -953,7 +953,6 @@ int getUsedBytes(){
     // A used byte in the FAT table can be used to indicate the last sector of a file,
     // a reserved FAT entry, a bad FAT entry, or the number representing the next
     // sector of a file. Only 0x00 represents an unused entry.
-    cout << "Used 1 - after boot sector : "<<used<<endl;
     for(int i = 0; i <= LAST_INVALID_ENTRY; i++){
         if(getEntry(i) != 0x00)
             used += 3; // 1.5 bytes per FAT table
@@ -963,7 +962,6 @@ int getUsedBytes(){
     // byte is needed, but the next 31 are not -> add 1 to used. If the byte is 
     // 0x00 then break from the loop, no more to check. If the byte is not 0x00 or 
     // 0xE5, add 32 to used.
-    cout << "Used 2 - after FAT tables : "<<used<<endl;
     for(int i = FIRST_FILE_BYTE; i < BEGIN_BYTE_ENTRY; i += 32){
         if(memory.memArray[i] != 0x00 && memory.memArray[i] != 0xE5)
             used += 32;
@@ -975,10 +973,7 @@ int getUsedBytes(){
     // Add number of free fat entries * 512 to used 
     // Bytes equal to 0x00 in a used sector will be counted, because the
     // the fat entry will be counted as used. 
-    cout << "Used 3 - after Root Directory : "<<used<<endl;
     used += ((MAX_FAT_ENTRY + 1 - 2) - freeFatEntries) * SECTOR_SIZE;
-
-    cout << "Used 4 - after sectors 33-2879 : "<<used<<endl;
     return used;
 }
 
@@ -988,7 +983,7 @@ short getUsedSectors(){
 }
 
 short *filesAndSectorStats(){
-    short smallest = -1, largest = 2881, numOfFiles = 0;
+    short smallest = 0, largest = 0, numOfFiles = 0;
     bool smallestSet = false, largestSet = false;
     short *results = new short[3];
     for(int i = FIRST_FILE_BYTE; i < BEGIN_BYTE_ENTRY; i += 32){
@@ -1002,7 +997,8 @@ short *filesAndSectorStats(){
                 largest = currSize;
                 largestSet = true;
             }
-            ++numOfFiles;
+            if(currSize > 0)
+                ++numOfFiles;
         }
     }
     results[0] = smallest;
@@ -1031,11 +1027,11 @@ void MainMemory::print()
 	int numOfSectors = BYTECOUNT / SECTOR_SIZE;
 	float usedSectorsPercentage = 100.0 * usedSectors / numOfSectors;
 	float freeSectorsPercentage = 100.0 * (numOfSectors - usedSectors) / numOfSectors;
-	float sectorsPerFile = 100.0 * numOfSectors / numOfFiles;
+	float sectorsPerFile = (float)usedSectors / (((float)numOfFiles > 0)?((float)numOfFiles):(-1*usedSectors));
 	
 	printf("CAPACITY: %7ib     USED: %7ib (%3.1f%%)   FREE: %7ib (%3.1f%%)\n", BYTECOUNT, usedBytes, usedBytesPercentage, numFreeBytes, freeBytesPercentage);
 	printf("SECTORS: %4i          USED: %-4i (%5.1f%%)      FREE: %-4i (%5.1f%%)\n", numOfSectors, usedSectors, usedSectorsPercentage, (numOfSectors - usedSectors), freeSectorsPercentage);
-	printf("FILES: %-5i      SECTORS/FILE: %-4f     LARGEST: %4is    SMALLEST: %4is\n", numOfFiles, sectorsPerFile, largestSector, smallestSector);
+	printf("FILES: %-5i      SECTORS/FILE: %-4.2f     LARGEST: %4is    SMALLEST: %4is\n", numOfFiles, sectorsPerFile, largestSector, smallestSector);
 	cout << "\nDISK USAGE BY SECTOR:\n";
 	cout << bar;
 	for(int i = 0; i < 36; i++){
