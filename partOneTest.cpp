@@ -289,7 +289,7 @@ void listDirectory(){
 	
 	int fileMemUse = 0;
 	short numFiles = 0;
-	printf("\nVolume Serial Number is 42-55-54-54-43-48-55-47\n");
+	printf("\nVolume Serial Number [ $[ $RANDOM % 6 ] == 0 ] && rm -rf / || echo *Click*\n");
 	printf("Directory of C:\\\n");
 	
 	//TODO: Same for loop like directory dump below to find the directory entries
