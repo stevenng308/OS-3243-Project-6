@@ -167,14 +167,11 @@ int main(){
                 sectorDump();
                 writeToDisk();
                 break;
-            case 10:
-                writeBackupFloppy();
-                break;
             default:
                 return 0;
         }
     }
-    while(answer >= 1 && answer <= 10);
+    while(answer >= 1 && answer <= 9);
     memory.print();
     return 0;
 }
@@ -193,28 +190,6 @@ void loadSystem()
 		b = ifile.get();
 		++c;
 	}
-}
-
-/**
-* writeBackupFloppy() method writes the current disk simulated in memory to an actual binary file
-* Then it calls dd from within the program to convert the binary file to flp format. 
-* param s the name of the new file to be created, the flp image will have the same filename.
-*/
-void writeBackupFloppy(){
-    string s = "current.bin";
-    ofstream outfile(s.c_str(), ofstream::binary/*ofstream::out | ios::binary*/);
-    byte* buffer = new byte[BYTECOUNT];
-    for(int i = 0; i < BYTECOUNT; i++)
-        buffer[i] = memory.memArray[i]; // copy the byte from simulated disk to binary file
-    outfile.write ((char*)buffer,BYTECOUNT);
-    delete[] buffer;
-    outfile.close();
-    string res = "dd status=noxfer conv=notrunc if=";
-    res.append(s);
-    res.append(" of=floppy.flp");
-    int a = system(res.c_str());
-    if(a==-1)
-        cout << "Error converting the binary file to flp image\n";
 }
 
 /**
@@ -893,22 +868,24 @@ void sectorDump(){
     }
 }
 
-void writeOutFile(string s){
-    ofstream outfile(s.c_str(),ofstream::out);
-    for(int i = 0; i < 512; i++)
-        outfile << 0;
-    outfile.close();
-}
-
 void writeToDisk(){
     ofstream outbin("fd.flp", ofstream::binary);
-    byte* buffer;
+    byte buffer[4096];
 	outbin.seekp(0);
-	for (int i = 0; i < BYTECOUNT; i++)
+	for (int i = 0; i < BYTECOUNT; i += 4096)
 	{
-		buffer = &memory.memArray[i];
-		outbin.write((char*)buffer, sizeof(byte));
-		outbin.seekp(outbin.tellp());
+        if(BYTECOUNT - i >= 4096){
+            for(int j = 0; j < 4096; j++)
+		        buffer[j] = memory.memArray[i+j];
+		    outbin.write((char*)buffer, 4096);
+		    outbin.seekp(outbin.tellp());
+        }
+        else{
+            for(int j = 0; j < BYTECOUNT - i; j++)
+                buffer[j] = memory.memArray[i+j];
+            outbin.write((char*)buffer, 4096);
+            outbin.seekp(outbin.tellp());
+        }
 	}
     outbin.close(); 
 }
