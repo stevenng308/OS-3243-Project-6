@@ -90,6 +90,7 @@ void writeToDisk();
 void writeBackupFloppy(string s);
 void writeBackupFloppy();
 string getNameBySector(int num);
+bool fatsAreConsistent();
 
 // Requested User Options
 void listDirectory();   // option # 1
@@ -304,6 +305,18 @@ void setFirstDirectoryBytes(){
 }
 
 /**
+* Checks the FAT tables and returns true only if each byte in the first FAT table
+* is exactly the same as its corresponding byte in the second FAT table.
+*/
+bool fatsAreConsistent(){
+    for(int i = FIRST_FAT_BYTE; i < FIRST_FAT_BYTE + FAT_SIZE; i++){
+        if(memory.memArray[i] != memory.memArray[i + FAT_SIZE])
+            return false;
+    }
+    return true;
+}
+
+/**
 * Prints the directory like in MS-DOS
 */
 void listDirectory(){
@@ -391,7 +404,6 @@ void directoryDump(){
 * of FAT table entries -> least number of sectors on disk, and creates directory for it in the root directory
 */
 void copyFileToDisk(){
-    // These 11 following variables and 's' at the bottom will be passed to the createFile method
     byte n[8];
     byte e[3];
     byte a = 0;
@@ -402,7 +414,7 @@ void copyFileToDisk(){
     ushort i = 0;
     ushort lmt = ct;
     ushort lmd = cd;
-    ushort fls = findFreeFat(1); // These 11 
+    ushort fls; 
 
     string fHandle;
     string fName;
@@ -853,7 +865,8 @@ void fatDump(){
         }
         cout << endl;
     }
-    cout << endl;
+    cout << "\nSECONDARY FAT TABLE CONSISTENCY CHECK:\n";
+    printf("The secondary FAT table %s match the primary FAT table.\n",(fatsAreConsistent())?("DOES"):("DOES NOT"));
 }
 
 /**
