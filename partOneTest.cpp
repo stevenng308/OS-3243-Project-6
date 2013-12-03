@@ -91,6 +91,7 @@ void writeBackupFloppy(string s);
 void writeBackupFloppy();
 string getNameBySector(int num);
 bool fatsAreConsistent();
+byte getAttributes();
 
 // Requested User Options
 void listDirectory();   // option # 1
@@ -427,6 +428,7 @@ void copyFileToDisk(){
 		cout << "A File with the same name exists. Please give your file a different name." << endl;
 		return;
 	}
+    a = getAttributes();
     extension = fHandle.substr(fHandle.find(".")+1,3);
     fName = fHandle.substr(0,fHandle.find("."));
     fHandle = fName+'.'+extension;
@@ -461,6 +463,45 @@ void copyFileToDisk(){
     }
     else
         cout << "Bad file name...\n";
+}
+
+
+/**
+* This method provides a user interface through which the user can select the 
+* attributes they wish to assign to the file being copied to the disk.
+*/
+byte getAttributes(){
+    char answer;
+    byte result = 0x00;
+    byte masks[] = {0x20,0x10,0x08,0x04,0x02,0x01};
+    string questions[] =   {"Is it an archive?: ", "Is it a Subdirectory?: ", "Is it a Volume Label?: ", "Is it a System?: ",
+                            "Is is Hidden?: ", "Is it Read-only?: "};   
+    int i = 0;
+    cout << "Would you like to set attributes of this file? (y/n): \n";
+    cin >> answer;
+    if(answer != 'y' && answer != 'Y')
+        return 0;
+    string clearAnswer = "\r                                                               \r";
+    cout << "\n  Please answer the following questions with 'y' for yes or 'n' for no.\n";
+    do{
+        if(i < 6){
+            if(i > 0)
+                cout << "\e[A\e[A\e[A\e[A\e[A\e[A\e[A";
+            printf("\r.---------.--------------.--------------.--------.--------.-----------.\n| Archive | Subdirectory | Volume Label | System | Hidden | Read-only |\n|---------+--------------+--------------+--------+--------+-----------|\n|    %1d    |      %1d       |      %1d       |   %1d    |   %1d    |     %1d     |\n'---------'--------------'--------------'--------'--------'-----------'\n\n%s%-25s",((result & 0x20)>>5),((result & 0x10)>>4),((result & 0x08)>>3),((result & 0x04)>>2),((result & 0x02)>>1),(result & 0x01),clearAnswer.c_str(),questions[i].c_str());
+            cin >> answer;
+            if(answer == 'y' || answer == 'Y')
+                result |= masks[i];
+        }
+        else{
+            cout << "\e[A\e[A\e[A\e[A\e[A\e[A\e[A";
+            printf("\r.---------.--------------.--------------.--------.--------.-----------.\n| Archive | Subdirectory | Volume Label | System | Hidden | Read-only |\n|---------+--------------+--------------+--------+--------+-----------|\n|    %1d    |      %1d       |      %1d       |   %1d    |   %1d    |     %1d     |\n'---------'--------------'--------------'--------'--------'-----------'\n\n%s%-25s",((result & 0x20)>>5),((result & 0x10)>>4),((result & 0x08)>>3),((result & 0x04)>>2),((result & 0x02)>>1),(result & 0x01),clearAnswer.c_str(),"  press any key to continue...");
+        }
+        ++i;
+    }
+    while(i < 7);
+    cin.ignore();
+    cin.ignore();
+    return result;
 }
 
 /**
