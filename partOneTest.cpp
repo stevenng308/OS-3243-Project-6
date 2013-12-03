@@ -648,6 +648,11 @@ void renameFile(){
         string newName, newExt;
         cout << "New name: ";
         cin >> nHandle;
+        if (nHandle.substr(0,nHandle.find(".")).length() > 8)
+		{
+			cout << "File name is too long. Please use an 8 character long file name." << endl;
+			return;
+		}
         int newByteStart = getDirectoryByte(nHandle);
         if(newByteStart != -1)
         {
