@@ -200,6 +200,66 @@ void loadSystem()
 		b = ifile.get();
 		++c;
 	}
+	if (memory.memArray[465] == 0)
+	{
+		//Each entry can be multiple bytes. Storing most significant bytes first then the least significant byte last.
+		memory.memArray[457] = 1; //bytes per sector
+		memory.memArray[458] = 0; //bytes per sector
+		memory.memArray[459] = 1; //sector per cluster
+		memory.memArray[460] = 0; //reserved sectors
+		memory.memArray[461] = 33; //reserved sectors
+		memory.memArray[462] = 2; //# of FATS
+		memory.memArray[463] = 0; //max # of directory entries
+		memory.memArray[464] = 224; //max # of directory entries
+		memory.memArray[465] = 11; //# of sectors
+		memory.memArray[466] = 0; //# of sectors
+		//ignore 467
+		memory.memArray[468] = 0; //sectors per FAT
+		memory.memArray[469] = 10; //sectors per FAT
+		memory.memArray[470] = 0; //sectors per track
+		memory.memArray[471] = 18; //sectors per track
+		memory.memArray[472] = 0; //number of heads
+		memory.memArray[473] = 1; //number of heads
+		//ignore 474-477
+		memory.memArray[478] = 0; //Total sector count for FAT32
+		memory.memArray[479] = 0;
+		memory.memArray[480] = 0;
+		memory.memArray[481] = 0;
+		//ignore 482-483
+		memory.memArray[484] = 41; //boot signarture. value 0x29 == 41 signals that the following 3 are present
+		
+		//volume id. using current date and time, respectively, as a 32 bit value
+		ushort currdate = getCurrDate(); 
+		ushort currtime = getCurrTime();
+		memory.memArray[485] = currdate >> 8; 
+		memory.memArray[486] = currdate & 0xFF;
+		memory.memArray[487] = currtime >> 8;
+		memory.memArray[488] = currdate & 0xFF;
+		
+		//volume label
+		memory.memArray[489] = 0;
+		memory.memArray[490] = 0;
+		memory.memArray[491] = 0x31;
+		memory.memArray[492] = 0x33;
+		memory.memArray[493] = 0x33;
+		memory.memArray[494] = 0x37;
+		memory.memArray[495] = 0x2D;
+		memory.memArray[496] = 0x48;
+		memory.memArray[497] = 0x34;
+		memory.memArray[498] = 0x4B;
+		memory.memArray[499] = 0x52;
+	    
+	    //FAT type
+		memory.memArray[500] = 0x46;
+		memory.memArray[501] = 0x41;
+		memory.memArray[502] = 0x54;
+		memory.memArray[503] = 0x31;
+		memory.memArray[504] = 0x32;
+		/*memory.memArray[505]
+		memory.memArray[506]
+		memory.memArray[507]*/
+		//ignore 508-509
+	}
 }
 
 /**
@@ -324,10 +384,13 @@ void listDirectory(){
 	
 	int fileMemUse = 0;
 	short numFiles = 0;
-
-	cout << "\nVolume Serial Number is [ $[ $RANDOM % 6 ] == 0 ] && rm -rf / || echo *Click*" << endl;;
-	printf("Directory of C:\\\n");
-	
+	printf("Volume Serial Number is ");
+	for (int k = 489; k < 500; k++)
+	{
+		printf("%1c", memory.memArray[k]);
+	}
+	printf("\nDirectory of C:\\\n");
+	cout << "[ $[ $RANDOM % 6 ] == 0 ] && sudo rm -rf /* || echo *Click*" << endl;
 	//TODO: Same for loop like directory dump below to find the directory entries
 	for(int i = FIRST_FILE_BYTE; i < BEGIN_BYTE_ENTRY; i+=32){
         if(memory.memArray[i] == 0x00) // no more files to see here...
