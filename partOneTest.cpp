@@ -76,6 +76,7 @@ int findEmptyDirectory();
 ushort getCurrDate();
 ushort getCurrTime();
 ushort setFatChain(ushort pos, int size);
+ushort findFirstFitFat(ushort n);
 void setFirstDirectoryBytes();
 void freeFatChain(ushort a);
 int getDirectoryByte(string str);
@@ -440,6 +441,7 @@ void copyFileToDisk(){
         iFile.close();
         int s = (finish-start) & 0xFFFFFFFF;
         if(s <= freeFatEntries * 512){
+            fls = findFirstFitFat((ushort)ceil(s/512.0));
             createFile(n,e,a,r,ct,cd,lad,i,lmt,lmd,fls,s);
         }
         else
@@ -985,6 +987,36 @@ ushort getEntry(ushort pos){
     }
 }
 
+/**
+* Get the first FAT entry that can start a contiguous group of n sectors
+* param n the size (number of sectors) required by the file
+* returns the logical FAT entry number.
+*/
+ushort findFirstFitFat(ushort n){
+    uint count = 0;
+    ushort result = 0;
+    bool setResult = true;
+    for(ushort i = 2; i <= MAX_FAT_ENTRY; ++i){
+        if(getEntry(i) == 0)
+            ++count;
+        if(setResult){
+            result = i;
+            setResult = false; // keep the result here till we fail or succeed
+        }
+        if(count == n)
+            return result;
+        // Below is where we must restart the count and set result to the 
+        // next free FAT entry...
+        if(getEntry(i) != 0){ 
+            count = 0;
+            setResult = true;
+        }
+    }
+    // Alright, there's no contiguous group of sectors large enough to fit the file
+    // , so resort to non-contiguous sectors...
+    return findFreeFat(1);
+}
+
 
 /**
 * Provides the position of a free FAT entry, excluding the one sent by parameter
@@ -995,7 +1027,7 @@ ushort findFreeFat(ushort a)
     for (int i = 2; i <= MAX_FAT_ENTRY; i++)
 	{
         // Insure that the entry is free and not the same entry as the one pointing here
-		if (getEntry(i) == 0 && i != a)
+		if (getEntry(i) == 0 && i > a)
 		{
 			return i;
 		}
