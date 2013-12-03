@@ -76,6 +76,7 @@ int findEmptyDirectory();
 ushort getCurrDate();
 ushort getCurrTime();
 ushort setFatChain(ushort pos, int size);
+ushort findFirstFitFat(ushort n);
 void setFirstDirectoryBytes();
 void freeFatChain(ushort a);
 int getDirectoryByte(string str);
@@ -88,6 +89,9 @@ void writeOutFile(string s);
 void writeToDisk();
 void writeBackupFloppy(string s);
 void writeBackupFloppy();
+string getNameBySector(int num);
+bool fatsAreConsistent();
+byte getAttributes();
 
 // Requested User Options
 void listDirectory();   // option # 1
@@ -265,13 +269,21 @@ void insertFile(File &f, int start)
         b = ifile.get();
         counter++;
         // If we have reached the end of the sector, we must move to next sector
-        if(counter==512 && getEntry(startSector)!=0xFFF){
+        if(counter==SECTOR_SIZE && getEntry(startSector)!=0xFFF){
             startSector = getEntry(startSector);
-            startByte = (startSector + 33 - 2) * 512;
+            startByte = (startSector + 33 - 2) * SECTOR_SIZE;
             counter = 0; // restart the counter to begin at the start of next sector
         }
     }
     ifile.close();
+    // write NULL's into the remaining bytes of the sector if the file does not use it all up
+    if (filesize < SECTOR_SIZE)
+    {
+		for (int i = filesize; i < SECTOR_SIZE; i++)
+		{
+			memory.memArray[startByte + i] = '\0';
+		}
+	}
 }
 
 /**
@@ -294,13 +306,26 @@ void setFirstDirectoryBytes(){
 }
 
 /**
+* Checks the FAT tables and returns true only if each byte in the first FAT table
+* is exactly the same as its corresponding byte in the second FAT table.
+*/
+bool fatsAreConsistent(){
+    for(int i = FIRST_FAT_BYTE; i < FIRST_FAT_BYTE + FAT_SIZE; i++){
+        if(memory.memArray[i] != memory.memArray[i + FAT_SIZE])
+            return false;
+    }
+    return true;
+}
+
+/**
 * Prints the directory like in MS-DOS
 */
 void listDirectory(){
 	
 	int fileMemUse = 0;
 	short numFiles = 0;
-	cout << "\nVolume Serial Number [ $[ $RANDOM % 6 ] == 0 ] && rm -rf / || echo *Click*" << endl;;
+
+	cout << "\nVolume Serial Number is [ $[ $RANDOM % 6 ] == 0 ] && rm -rf / || echo *Click*" << endl;;
 	printf("Directory of C:\\\n");
 	
 	//TODO: Same for loop like directory dump below to find the directory entries
@@ -381,7 +406,6 @@ void directoryDump(){
 * of FAT table entries -> least number of sectors on disk, and creates directory for it in the root directory
 */
 void copyFileToDisk(){
-    // These 11 following variables and 's' at the bottom will be passed to the createFile method
     byte n[8];
     byte e[3];
     byte a = 0;
@@ -392,19 +416,25 @@ void copyFileToDisk(){
     ushort i = 0;
     ushort lmt = ct;
     ushort lmd = cd;
-    ushort fls = findFreeFat(1); // These 11 
+    ushort fls; 
 
     string fHandle;
     string fName;
     string extension;
     cout << "\nFilename to copy to the simulated disk: ";
     cin >> fHandle;
+    if (fHandle.substr(0,fHandle.find(".")).length() > 8)
+	{
+		cout << "File name is too long. Please use an 8 character long file name." << endl;
+		return;
+	}
     int byteStart = getDirectoryByte(fHandle);
     if (byteStart != -1)
     {
 		cout << "A File with the same name exists. Please give your file a different name." << endl;
 		return;
 	}
+    a = getAttributes();
     extension = fHandle.substr(fHandle.find(".")+1,3);
     fName = fHandle.substr(0,fHandle.find("."));
     fHandle = fName+'.'+extension;
@@ -431,6 +461,7 @@ void copyFileToDisk(){
         iFile.close();
         int s = (finish-start) & 0xFFFFFFFF;
         if(s <= freeFatEntries * 512){
+            fls = findFirstFitFat((ushort)ceil(s/512.0));
             createFile(n,e,a,r,ct,cd,lad,i,lmt,lmd,fls,s);
         }
         else
@@ -438,6 +469,45 @@ void copyFileToDisk(){
     }
     else
         cout << "Bad file name...\n";
+}
+
+
+/**
+* This method provides a user interface through which the user can select the 
+* attributes they wish to assign to the file being copied to the disk.
+*/
+byte getAttributes(){
+    char answer;
+    byte result = 0x00;
+    byte masks[] = {0x20,0x10,0x08,0x04,0x02,0x01};
+    string questions[] =   {"Is it an archive?: ", "Is it a Subdirectory?: ", "Is it a Volume Label?: ", "Is it a System?: ",
+                            "Is is Hidden?: ", "Is it Read-only?: "};   
+    int i = 0;
+    cout << "Would you like to set attributes of this file? (y/n): \n";
+    cin >> answer;
+    if(answer != 'y' && answer != 'Y')
+        return 0;
+    string clearAnswer = "\r                                                               \r";
+    cout << "\n  Please answer the following questions with 'y' for yes or 'n' for no.\n";
+    do{
+        if(i < 6){
+            if(i > 0)
+                cout << "\e[A\e[A\e[A\e[A\e[A\e[A\e[A";
+            printf("\r.---------.--------------.--------------.--------.--------.-----------.\n| Archive | Subdirectory | Volume Label | System | Hidden | Read-only |\n|---------+--------------+--------------+--------+--------+-----------|\n|    %1d    |      %1d       |      %1d       |   %1d    |   %1d    |     %1d     |\n'---------'--------------'--------------'--------'--------'-----------'\n\n%s%-25s",((result & 0x20)>>5),((result & 0x10)>>4),((result & 0x08)>>3),((result & 0x04)>>2),((result & 0x02)>>1),(result & 0x01),clearAnswer.c_str(),questions[i].c_str());
+            cin >> answer;
+            if(answer == 'y' || answer == 'Y')
+                result |= masks[i];
+        }
+        else{
+            cout << "\e[A\e[A\e[A\e[A\e[A\e[A\e[A";
+            printf("\r.---------.--------------.--------------.--------.--------.-----------.\n| Archive | Subdirectory | Volume Label | System | Hidden | Read-only |\n|---------+--------------+--------------+--------+--------+-----------|\n|    %1d    |      %1d       |      %1d       |   %1d    |   %1d    |     %1d     |\n'---------'--------------'--------------'--------'--------'-----------'\n\n%s%-25s",((result & 0x20)>>5),((result & 0x10)>>4),((result & 0x08)>>3),((result & 0x04)>>2),((result & 0x02)>>1),(result & 0x01),clearAnswer.c_str(),"  press any key to continue...");
+        }
+        ++i;
+    }
+    while(i < 7);
+    cin.ignore();
+    cin.ignore();
+    return result;
 }
 
 /**
@@ -734,6 +804,47 @@ int findEmptyDirectory(){
     return -1;
 }
 
+string getNameBySector(int num){
+    int fatsNeeded;
+    int byteIndex = -1;
+    bool foundIndex = false;
+    for(int i = FIRST_FILE_BYTE; i < BEGIN_BYTE_ENTRY; i+= 32){
+        if(memory.memArray[i] != 0xE5 && memory.memArray[i] != 0x00){
+            fatsNeeded =  ceil(((memory.memArray[i+28] << 24) + (memory.memArray[i+29] << 16) + (memory.memArray[i+30] << 8) + memory.memArray[i+31])/(double)SECTOR_SIZE);
+            ushort FATs[fatsNeeded];
+            printFatChain(((memory.memArray[i+26] << 8) + memory.memArray[i+27]),FATs,0);
+            for(int j = 0; j < fatsNeeded; j++){
+                if(FATs[j] + 33 - 2 == num){
+                    byteIndex = i;
+                    foundIndex = true;
+                    break;
+                }
+            }
+        }
+        if(foundIndex)
+            break;
+    }
+    // Now if we've found the index of the first byte in the correct directory, return the name
+    char fname[8];
+    char ext[3];
+    if(byteIndex == -1)
+        return "bob hope";
+    for(int j = 0; j < 32; j++){
+        if(j >= 0 && j < 8)
+            fname[j] = memory.memArray[byteIndex+j];
+        else if(j < 11)
+            ext[j-8] = memory.memArray[byteIndex+j];
+    }
+    string fname_string(fname);
+    fname_string = fname_string.substr(fname_string.find_first_not_of(" "),8);
+    string ext_string(ext);
+    ext_string = ext_string.substr(ext_string.find_first_not_of(" "),3);
+    //printf("%8s.%3s\n",fname_string.c_str(),ext_string.c_str());
+    fname_string.append(".");
+    fname_string.append(ext_string);
+    return fname_string;
+}
+
 /**
 * Method that sets first two FAT entries as specified in assignment, assigns all valid entries to 0x00,
 * and assigns all invalid entries that do no represent physical sectors on disk to 0xFF7 (bad sector)
@@ -801,7 +912,8 @@ void fatDump(){
         }
         cout << endl;
     }
-    cout << endl;
+    cout << "\nSECONDARY FAT TABLE CONSISTENCY CHECK:\n";
+    printf("The secondary FAT table %s match the primary FAT table.\n",(fatsAreConsistent())?("DOES"):("DOES NOT"));
 }
 
 /**
@@ -822,7 +934,7 @@ void listFatChain(){
             if(i % 15 == 0){
                 printf("%04d-%04d: ",i,min(i+14,fatsNeeded-1));
             }
-            printf("%04d ", FATs[i]-2);
+            printf("%04d ", FATs[i]);
             if((i+1) % 15 == 0)
                 cout << endl;
         }
@@ -856,6 +968,8 @@ void sectorDump(){
         cin.clear();
         return;
     }
+    getDirectoryByte(getNameBySector(sector)); // calls getDirectoryByte passing in the name of the file
+    // This in turn will call the updateAccessDate method on the file being accessed
     int secByte = sector * SECTOR_SIZE;
     for(int i = 0; i < SECTOR_SIZE; i+=20){
         printf("%03d: ",i);
@@ -933,6 +1047,36 @@ ushort getEntry(ushort pos){
     }
 }
 
+/**
+* Get the first FAT entry that can start a contiguous group of n sectors
+* param n the size (number of sectors) required by the file
+* returns the logical FAT entry number.
+*/
+ushort findFirstFitFat(ushort n){
+    uint count = 0;
+    ushort result = 0;
+    bool setResult = true;
+    for(ushort i = 2; i <= MAX_FAT_ENTRY; ++i){
+        if(getEntry(i) == 0)
+            ++count;
+        if(setResult){
+            result = i;
+            setResult = false; // keep the result here till we fail or succeed
+        }
+        if(count == n)
+            return result;
+        // Below is where we must restart the count and set result to the 
+        // next free FAT entry...
+        if(getEntry(i) != 0){ 
+            count = 0;
+            setResult = true;
+        }
+    }
+    // Alright, there's no contiguous group of sectors large enough to fit the file
+    // , so resort to non-contiguous sectors...
+    return findFreeFat(1);
+}
+
 
 /**
 * Provides the position of a free FAT entry, excluding the one sent by parameter
@@ -943,7 +1087,7 @@ ushort findFreeFat(ushort a)
     for (int i = 2; i <= MAX_FAT_ENTRY; i++)
 	{
         // Insure that the entry is free and not the same entry as the one pointing here
-		if (getEntry(i) == 0 && i != a)
+		if (getEntry(i) == 0 && i > a)
 		{
 			return i;
 		}
@@ -1101,7 +1245,10 @@ short *filesAndSectorStats(){
 void MainMemory::print()
 {
 	//variables for usage map
-	int usedBytes = getUsedBytes();
+	int usedBytes = 16896 + (1457664 - freeFatEntries * 512);
+	//16896 bytes are gone to the boot, FATs, and root directory.
+	//They are not "free" to the user for use but there is space in the first 33 sectors for the system to use.
+	//usedBytes are the bytes used by the user from sector 33 to 2879.
 	short usedSectors = getUsedSectors();
     short *stats = filesAndSectorStats();
 	short numOfFiles = stats[2];
@@ -1118,8 +1265,8 @@ void MainMemory::print()
 	float sectorsPerFile = (float)usedSectors / (((float)numOfFiles > 0)?((float)numOfFiles):(-1*usedSectors));
 	
 	printf("CAPACITY: %7ib     USED: %7ib (%3.1f%%)   FREE: %7ib (%3.1f%%)\n", BYTECOUNT, usedBytes, usedBytesPercentage, numFreeBytes, freeBytesPercentage);
-	printf("SECTORS: %4i          USED: %-4i (%5.1f%%)      FREE: %-4i (%5.1f%%)\n", numOfSectors, usedSectors, usedSectorsPercentage, (numOfSectors - usedSectors), freeSectorsPercentage);
-	printf("FILES: %-5i      SECTORS/FILE: %-4.2f     LARGEST: %4is    SMALLEST: %4is\n", numOfFiles, sectorsPerFile, largestSector, smallestSector);
+	printf("SECTORS: %4i          USED: %4i (%3.1f%%)       FREE: %4i (%3.1f%%)\n", numOfSectors, usedSectors, usedSectorsPercentage, (numOfSectors - usedSectors), freeSectorsPercentage);
+	printf("FILES: %-5i      SECTORS/FILE: %4.2f     LARGEST: %4is    SMALLEST: %4is\n", numOfFiles, sectorsPerFile, largestSector, smallestSector);
 	cout << "\nDISK USAGE BY SECTOR:\n";
 	cout << bar;
 	for(int i = 0; i < 36; i++){
@@ -1127,7 +1274,7 @@ void MainMemory::print()
 		int end = (i+1)*80-1;
 		printf("%04d-%04d: ",begin,end);
 		char toPrint;
-		for(int j = begin; j <= end; j++){
+	    for(ushort j = begin; j <= end; j++){
 			toPrint = '.';
 			if(j==0){
 				toPrint = 'B';
@@ -1138,7 +1285,7 @@ void MainMemory::print()
 			else if(j < 33){
 				toPrint = 'R';
 			}
-			else if(checkSector(j))
+			else if(getEntry(j-33+2) != 0x00)
 			{
 				toPrint = 'X';
 			}
