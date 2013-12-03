@@ -266,13 +266,21 @@ void insertFile(File &f, int start)
         b = ifile.get();
         counter++;
         // If we have reached the end of the sector, we must move to next sector
-        if(counter==512 && getEntry(startSector)!=0xFFF){
+        if(counter==SECTOR_SIZE && getEntry(startSector)!=0xFFF){
             startSector = getEntry(startSector);
-            startByte = (startSector + 33 - 2) * 512;
+            startByte = (startSector + 33 - 2) * SECTOR_SIZE;
             counter = 0; // restart the counter to begin at the start of next sector
         }
     }
     ifile.close();
+    // write NULL's into the remaining bytes of the sector if the file does not use it all up
+    if (filesize < SECTOR_SIZE)
+    {
+		for (int i = filesize; i < SECTOR_SIZE; i++)
+		{
+			memory.memArray[startByte + i] = '\0';
+		}
+	}
 }
 
 /**
@@ -1145,7 +1153,10 @@ short *filesAndSectorStats(){
 void MainMemory::print()
 {
 	//variables for usage map
-	int usedBytes = getUsedBytes();
+	int usedBytes = 16896 + (1457664 - freeFatEntries * 512);
+	//16896 bytes are gone to the boot, FATs, and root directory.
+	//They are not "free" to the user for use but there is space in the first 33 sectors for the system to use.
+	//usedBytes are the bytes used by the user from sector 33 to 2879.
 	short usedSectors = getUsedSectors();
     short *stats = filesAndSectorStats();
 	short numOfFiles = stats[2];
@@ -1162,8 +1173,8 @@ void MainMemory::print()
 	float sectorsPerFile = (float)usedSectors / (((float)numOfFiles > 0)?((float)numOfFiles):(-1*usedSectors));
 	
 	printf("CAPACITY: %7ib     USED: %7ib (%3.1f%%)   FREE: %7ib (%3.1f%%)\n", BYTECOUNT, usedBytes, usedBytesPercentage, numFreeBytes, freeBytesPercentage);
-	printf("SECTORS: %4i          USED: %-4i (%5.1f%%)      FREE: %-4i (%5.1f%%)\n", numOfSectors, usedSectors, usedSectorsPercentage, (numOfSectors - usedSectors), freeSectorsPercentage);
-	printf("FILES: %-5i      SECTORS/FILE: %-4.2f     LARGEST: %4is    SMALLEST: %4is\n", numOfFiles, sectorsPerFile, largestSector, smallestSector);
+	printf("SECTORS: %4i          USED: %4i (%3.1f%%)       FREE: %4i (%3.1f%%)\n", numOfSectors, usedSectors, usedSectorsPercentage, (numOfSectors - usedSectors), freeSectorsPercentage);
+	printf("FILES: %-5i      SECTORS/FILE: %4.2f     LARGEST: %4is    SMALLEST: %4is\n", numOfFiles, sectorsPerFile, largestSector, smallestSector);
 	cout << "\nDISK USAGE BY SECTOR:\n";
 	cout << bar;
 	for(int i = 0; i < 36; i++){
