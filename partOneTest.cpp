@@ -26,9 +26,9 @@
 
 using namespace std;
 
-// Define Global Variables
-
 typedef unsigned char byte;
+
+// Define Global Variables
 
 string bar = "           |----+----|----+----|----+----|----+----|----+----|----+----|----+----|----+----\n";
 string menuOptions = "\nMenu:\n1) List Directory\n2) Copy file to disk\n3) Delete file\n4) Rename a file\n5) Usage map\n6) Directory dump\n7) FAT dump\n8) FAT chain\n9) Sector dump\n0) Quit\n> ";
@@ -38,8 +38,6 @@ int freeFatEntries; // added 1 to get quantity, subtract 2 since entries 0 and 1
 
 struct MainMemory{
     byte memArray[BYTECOUNT]; // 0-511 is for the boot partition
-    
-    MainMemory();
     void findFreeSector();
     short checkSector(int sectorNum);
     //void insertIntoMemory(byte b);
@@ -88,7 +86,6 @@ ushort setFatChain(ushort pos, int size);
 ushort findFirstFitFat(ushort n);
 int findEmptyDirectory();
 int getDirectoryByte(string str);
-int getUsedBytes();
 short getUsedSectors();
 short *filesAndSectorStats();
 bool fatsAreConsistent();
@@ -935,11 +932,6 @@ string getNameBySector(int num){
 void initializeFAT(){
     setEntry(0, 0xFF0);
     setEntry(1, 0xFF1);
-    // Initialize all the unused sectors
-    /**
-    for(ushort i = 2; i <= MAX_FAT_ENTRY; i++){
-        setEntry(i, 0x00);
-    }*/
     // The following FAT entries are invalid and do not represent
     // any available sector on disk.
     for(ushort i = MAX_FAT_ENTRY + 1; i <= LAST_INVALID_ENTRY; i++){
@@ -1190,44 +1182,6 @@ void updateAccessDate(int startByte)
 	memory.memArray[startByte + 19] = ad & 0xFF;
 }
 
-MainMemory::MainMemory()
-{
-	/*for (int i = 0; i < BYTECOUNT; i++)
-	{
-		memArray[i] = 0;
-	}*/
-}
-
-// I think this method is no longer needed since we can use the findFreeFat method above
-void MainMemory::findFreeSector(){
-	/*int sector = 33;
-	bool empty;
-    for (int i = BEGIN_BYTE_ENTRY; i < BYTECOUNT; )
-    {
-		empty = true;
-		for (int j = i; j < i + SECTOR_SIZE; j++)
-		{
-			if (memory.memArray[j])
-			{
-				empty = false;
-				break;
-			} 
-		}
-		if (empty)
-		{
-			freeSectors.push_back(sector);
-		}
-		sector++;
-		i += SECTOR_SIZE;
-	}*/
-	
-}
-
-/*void MainMemory::insertIntoMemory(byte b)
-{
-	memory.memArray[0] = b;
-}*/
-
 /**
 * Checks the first byte, starting from the data area of memory, of each sector
 * Returns a 1 if the first byte is not 0. Returns 0 otherwise
@@ -1244,53 +1198,6 @@ short MainMemory::checkSector(int sectorNum)
 	{
 		return 0;
 	}
-}
-
-/**
-* Method: getUsedBytes()
-* goes through each part of the disk (Boot sector -> FAT tables -> Root Directory -> Data area)
-* and counts the bytes that are not used, which doesn't mean counting all the ones that are 0x00.
-* In some cases, the bytes that are 0x00 are still being used to hold valuable information.
-* returns the total number of bytes being used on disk.
-*/
-int getUsedBytes(){
-    int used;
-    used = 512; // begin by counting all of the boot sector
-    // Go through boot sector and count all bytes that are set to 0x00
-    /** - If we must count the 0x00 bytes in the boot sector as unused, use the block below
-    used = 0;
-    for(int i = 0; i < 512; i++){
-        if(memory.memArray[i] != 0x00)
-            ++used;
-    }*/
-    // Go though the FAT table and count the 'ENTRIES' that are not 0x00,
-    // Then, multiply that number by 1.5, since each entry takes 1.5 bytes of space.
-    // Then, multiply that by 2, since FAT table 1 is duplicated in FAT2
-    // A used byte in the FAT table can be used to indicate the last sector of a file,
-    // a reserved FAT entry, a bad FAT entry, or the number representing the next
-    // sector of a file. Only 0x00 represents an unused entry.
-    for(int i = 0; i <= LAST_INVALID_ENTRY; i++){
-        if(getEntry(i) != 0x00)
-            used += 3; // 1.5 bytes per FAT table
-    }
-    // Go through the Root Directory starting at the first byte (FIRST_FILE_BYTE)
-    // and check the first byte of each 32 byte section. If it is 0xE5, then that
-    // byte is needed, but the next 31 are not -> add 1 to used. If the byte is 
-    // 0x00 then break from the loop, no more to check. If the byte is not 0x00 or 
-    // 0xE5, add 32 to used.
-    for(int i = FIRST_FILE_BYTE; i < BEGIN_BYTE_ENTRY; i += 32){
-        if(memory.memArray[i] != 0x00 && memory.memArray[i] != 0xE5)
-            used += 32;
-        else if(memory.memArray[i] == 0xE5)
-            ++used;
-        else
-            break;
-    }   
-    // Add number of free fat entries * 512 to used 
-    // Bytes equal to 0x00 in a used sector will be counted, because the
-    // the fat entry will be counted as used. 
-    used += ((MAX_FAT_ENTRY + 1 - 2) - freeFatEntries) * SECTOR_SIZE;
-    return used;
 }
 
 short getUsedSectors(){
@@ -1328,16 +1235,16 @@ short *filesAndSectorStats(){
 */
 void MainMemory::print()
 {
-	//variables for usage map
+	// variables for usage map
 	int usedBytes = 16896 + (1457664 - freeFatEntries * 512);
-	//16896 bytes are gone to the boot, FATs, and root directory.
-	//They are not "free" to the user for use but there is space in the first 33 sectors for the system to use.
-	//usedBytes are the bytes used by the user from sector 33 to 2879.
+	// 16896 bytes are gone to the boot, FATs, and root directory.
+	// They are not "free" to the user for use but there is space in the first 33 sectors for the system to use.
+	// usedBytes are the bytes used by the user from sector 33 to 2879.
 	short usedSectors = getUsedSectors();
     short *stats = filesAndSectorStats();
 	short numOfFiles = stats[2];
-	short largestSector = stats[1]; //largest num of sectors that a file is using
-	short smallestSector = stats[0]; //smallest num of sectors that a file is using
+	short largestSector = stats[1];     // largest num of sectors that a file is using
+	short smallestSector = stats[0];    // smallest num of sectors that a file is using
 	
 
 	float usedBytesPercentage = 100.0 * usedBytes / BYTECOUNT;
