@@ -22,7 +22,6 @@
 #define LAST_INVALID_ENTRY 3071 // first invalid entry is 2849
 #define FIRST_FILE_BYTE 9728
 #define FILE_ENTRY_SIZE 32
-#define SECTOR_SIZE 512
 #define FLOPPY_NAME "fdd.flp"
 
 using namespace std;
@@ -38,10 +37,8 @@ int freeFatEntries; // added 1 to get quantity, subtract 2 since entries 0 and 1
 // Define Structs
 
 struct MainMemory{
-    byte memArray[BYTECOUNT]; // 0-511 is for the boot partition
-    
-    short checkSector(int sectorNum);
-    void print();
+    byte memArray[BYTECOUNT]; 
+    void print();       // option # 5
 };
 
 struct File
@@ -928,7 +925,6 @@ string getNameBySector(int num){
     fname_string = fname_string.substr(fname_string.find_first_not_of(" "),8);
     string ext_string(ext);
     ext_string = ext_string.substr(ext_string.find_first_not_of(" "),3);
-    //printf("%8s.%3s\n",fname_string.c_str(),ext_string.c_str());
     fname_string.append(".");
     fname_string.append(ext_string);
     return fname_string;
@@ -1191,24 +1187,6 @@ void updateAccessDate(int startByte)
 	memory.memArray[startByte + 19] = ad & 0xFF;
 }
 
-/**
-* Checks the first byte, starting from the data area of memory, of each sector
-* Returns a 1 if the first byte is not 0. Returns 0 otherwise
-*/
-short MainMemory::checkSector(int sectorNum)
-{
-	sectorNum -= 33;
-	int firstByteIndex = BEGIN_BYTE_ENTRY + sectorNum * 512;
-	if (memArray[firstByteIndex] != 0)
-	{
-		return 1;
-	}
-	else
-	{
-		return 0;
-	}
-}
-
 short getUsedSectors(){
     return ((MAX_FAT_ENTRY + 1 - 2) - freeFatEntries) + 33;
     // The 33 includes the boot sector, FAT table sectors, and root directory sectors
@@ -1245,7 +1223,7 @@ short *filesAndSectorStats(){
 void MainMemory::print()
 {
 	// variables for usage map
-	int usedBytes = 16896 + (1457664 - freeFatEntries * 512);
+	int usedBytes = BEGIN_BYTE_ENTRY + (1457664 - freeFatEntries * SECTOR_SIZE);
 	// 16896 bytes are gone to the boot, FATs, and root directory.
 	// They are not "free" to the user for use but there is space in the first 33 sectors for the system to use.
 	// usedBytes are the bytes used by the user from sector 33 to 2879.
