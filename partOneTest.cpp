@@ -514,7 +514,6 @@ void copyFileToDisk(){
     if(iFile.good() && fName.length() < 9){
         fName = toUpper(fName);
         extension = toUpper(extension);
-        a = getAttributes();
         unsigned k = 8 - fName.length(), j = 0; 
         for(;k < 8; ++k, ++j){
             if(j < fName.length())
@@ -536,6 +535,7 @@ void copyFileToDisk(){
         iFile.close();
         int s = (finish-start) & 0xFFFFFFFF;
         if(s <= freeFatEntries * 512){
+            a = getAttributes();
             fls = findFirstFitFat((ushort)ceil(s/512.0));
             createFile(n,e,a,r,ct,cd,lad,i,lmt,lmd,fls,s);
         }
