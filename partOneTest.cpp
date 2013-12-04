@@ -92,6 +92,7 @@ void writeBackupFloppy();
 string getNameBySector(int num);
 bool fatsAreConsistent();
 byte getAttributes();
+string toUpper(string str);
 
 // Requested User Options
 void listDirectory();   // option # 1
@@ -465,6 +466,24 @@ void directoryDump(){
 }
 
 /**
+* To upper method takes any string and converts all lower-case alphabetic characters
+* to their upper-case counterparts.
+* param str the input string
+* returns the converted string
+*/
+string toUpper(string str){
+    string result = "";
+    for(unsigned i = 0; i < str.length(); i++){
+        if(str[i] > 96 && str[i] < 123){ // current character is a lower-case char
+            result += (char)(str[i]-32); 
+        }
+        else
+            result += (char)(str[i]); // just add the current (non-lower-case) character
+    }
+    return result;
+}
+
+/**
 * Takes a filename specified by the user, looks for the file, and if valid, copies the file to the disk using the least amount
 * of FAT table entries -> least number of sectors on disk, and creates directory for it in the root directory
 */
@@ -497,12 +516,14 @@ void copyFileToDisk(){
 		cout << "A File with the same name exists. Please give your file a different name." << endl;
 		return;
 	}
-    a = getAttributes();
     extension = fHandle.substr(fHandle.find(".")+1,3);
     fName = fHandle.substr(0,fHandle.find("."));
     fHandle = fName+'.'+extension;
     ifstream iFile(fHandle.c_str());
     if(iFile.good() && fName.length() < 9){
+        fName = toUpper(fName);
+        extension = toUpper(extension);
+        a = getAttributes();
         unsigned k = 8 - fName.length(), j = 0; 
         for(;k < 8; ++k, ++j){
             if(j < fName.length())
@@ -585,6 +606,7 @@ void deleteFile(){
     string extension;
     cout << "\nFilename to delete: ";
     cin >> fHandle;
+    fHandle = toUpper(fHandle);
     extension = fHandle.substr(fHandle.find(".")+1,3);
     fName = fHandle.substr(0,fHandle.find("."));
     byte n[8], e[3];
@@ -642,6 +664,7 @@ void renameFile(){
     string fHandle;
     cout << "\nFilename to rename: ";
     cin >> fHandle;
+    fHandle = toUpper(fHandle);
     int byteStart = getDirectoryByte(fHandle);
     if(byteStart != -1){
         string nHandle;
@@ -991,6 +1014,7 @@ void listFatChain(){
     string fHandle;
     cout << "\nFilename for which to list allocated sectors: "; 
     cin >> fHandle;
+    fHandle = toUpper(fHandle);
     int startIndex = getDirectoryByte(fHandle);
     if(startIndex != -1){
         // Declare new array the size of the number of FAT entries needed for this file
