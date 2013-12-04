@@ -1197,6 +1197,11 @@ short getUsedSectors(){
     // The 33 includes the boot sector, FAT table sectors, and root directory sectors
 }
 
+/**
+* This method returns a pointer to a set of 3 shorts that represent the smallest amount of sectors
+* used by a file, the largest number of sectors used by a file, and the number of files that are 
+* on the disk. This array will be used by the usage map when the user selects option #5. 
+*/
 short *filesAndSectorStats(){
     short smallest = 0, largest = 0, numOfFiles = 0;
     bool smallestSet = false, largestSet = false;
@@ -1247,7 +1252,13 @@ void MainMemory::print()
 	float usedSectorsPercentage = 100.0 * usedSectors / numOfSectors;
 	float freeSectorsPercentage = 100.0 * (numOfSectors - usedSectors) / numOfSectors;
 	float sectorsPerFile = (float)usedSectors / (((float)numOfFiles > 0)?((float)numOfFiles):(-1*usedSectors));
-	
+    // For the following output. the USED bytes and USED sectors percentage will be exactly the same
+    // because we have chunked out the first 33 sectors as USED by the disk, they are not free to insert 
+    // files. Since files are allocated by sectors, even if the last sector of a file is only partially 
+    // filled, we allocate the entire sector. This forces the sector/bytes ratio to remain constant. 
+    // One more note: The SECTORS/FILE output will output -1.00 when the number of files is 0. This
+    // technically incorrect, since dividing anthing by 0 does not yield -1. We use -1 to represent an 
+    // invalid result. 
 	printf("CAPACITY: %7ib     USED: %7ib (%3.1f%%)   FREE: %7ib (%3.1f%%)\n", BYTECOUNT, usedBytes, usedBytesPercentage, numFreeBytes, freeBytesPercentage);
 	printf("SECTORS: %4i          USED: %4i (%3.1f%%)       FREE: %4i (%3.1f%%)\n", numOfSectors, usedSectors, usedSectorsPercentage, (numOfSectors - usedSectors), freeSectorsPercentage);
 	printf("FILES: %-5i      SECTORS/FILE: %4.2f     LARGEST: %4is    SMALLEST: %4is\n", numOfFiles, sectorsPerFile, largestSector, smallestSector);
