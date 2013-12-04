@@ -23,6 +23,7 @@
 #define FIRST_FILE_BYTE 9728
 #define FILE_ENTRY_SIZE 32
 #define SECTOR_SIZE 512
+#define FLOPPY_NAME "fdd.flp"
 
 using namespace std;
 
@@ -38,9 +39,8 @@ int freeFatEntries; // added 1 to get quantity, subtract 2 since entries 0 and 1
 
 struct MainMemory{
     byte memArray[BYTECOUNT]; // 0-511 is for the boot partition
-    void findFreeSector();
+    
     short checkSector(int sectorNum);
-    //void insertIntoMemory(byte b);
     void print();
 };
 
@@ -170,7 +170,7 @@ int main(){
 */
 void loadSystem()
 {
-	ifstream ifile("fdd.flp",std::ifstream::in);
+	ifstream ifile(FLOPPY_NAME,std::ifstream::in);
     byte b = ifile.get();
     int c = 0;
     while (ifile.good()){
@@ -1071,7 +1071,7 @@ void sectorDump(){
 }
 
 void writeToDisk(){
-    ofstream outbin("fdd.flp", ofstream::binary);
+    ofstream outbin(FLOPPY_NAME, ofstream::binary);
     byte buffer[4096];
 	outbin.seekp(0);
 	for (int i = 0; i < BYTECOUNT; i += 4096)
