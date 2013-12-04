@@ -1178,8 +1178,9 @@ ushort findFreeFat(ushort a)
 }
 
 /**
-* Update the access date of a file using the file's directory entry's first byte
-*/
+ * Update the access date of a file using the file's directory entry's first byte 
+ * offset by 18 and 19 which are the bytes containing the entry's last access date
+ */
 void updateAccessDate(int startByte)
 {
 	ushort ad = getCurrDate();
@@ -1187,6 +1188,10 @@ void updateAccessDate(int startByte)
 	memory.memArray[startByte + 19] = ad & 0xFF;
 }
 
+/**
+ * Get the amount of sectors in use by taking the difference between total FAT entries (-2 that are reserved)
+ * and FAT entries that are free
+ */
 short getUsedSectors(){
     return ((MAX_FAT_ENTRY + 1 - 2) - freeFatEntries) + 33;
     // The 33 includes the boot sector, FAT table sectors, and root directory sectors
@@ -1226,6 +1231,7 @@ void MainMemory::print()
 	int usedBytes = BEGIN_BYTE_ENTRY + (1457664 - freeFatEntries * SECTOR_SIZE);
 	// 16896 bytes are gone to the boot, FATs, and root directory.
 	// They are not "free" to the user for use but there is space in the first 33 sectors for the system to use.
+	// 1457664 is the total amount of bytes from sector 33 to 2879
 	// usedBytes are the bytes used by the user from sector 33 to 2879.
 	short usedSectors = getUsedSectors();
     short *stats = filesAndSectorStats();
