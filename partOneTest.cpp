@@ -553,7 +553,7 @@ byte getAttributes(){
     string questions[] =   {"Is it an archive?: ", "Is it a Subdirectory?: ", "Is it a Volume Label?: ", "Is it a System?: ",
                             "Is is Hidden?: ", "Is it Read-only?: "};   
     int i = 0;
-    cout << "Would you like to set attributes of this file? (y/n): \n";
+    cout << "Would you like to set attributes of this file? (y/n): ";
     cin >> answer;
     if(answer.at(0) != 'y' && answer.at(0) != 'Y')
         return 0;
