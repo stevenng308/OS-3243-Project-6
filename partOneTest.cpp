@@ -908,7 +908,7 @@ string getNameBySector(int num){
     char fname[8];
     char ext[3];
     if(byteIndex == -1)
-        return "Bill Manager is a software god!";
+        return "billmngr";
     for(int j = 0; j < 32; j++){
         if(j >= 0 && j < 8)
             fname[j] = memory.memArray[byteIndex+j];
