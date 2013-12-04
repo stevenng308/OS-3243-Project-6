@@ -178,7 +178,8 @@ void loadSystem()
 		b = ifile.get();
 		++c;
 	}
-	// Bonus #1: This if statement determines if the partition signature has been written to disk yet
+	// Bonus #1: 
+    // This if statement determines if the partition signature has been written to disk yet
 	// If the partition signature has not been written to disk, we do that here. These 64 bytes are 
 	// located at the end of the boot sector on disk and range from byte number 465 to 509. Bytes 510 
 	// and 511 are reserved for the 0x55AA, the boot signature.
@@ -379,8 +380,7 @@ void listDirectory(){
 		printf("%1c", memory.memArray[k]);
 	}
 	printf("\nDirectory of C:\\\n");
-	cout << "[ $[ $RANDOM % 6 ] == 0 ] && sudo rm -rf /* || echo *Click*" << endl;
-	//TODO: Same for loop like directory dump below to find the directory entries
+	//cout << "[ $[ $RANDOM % 6 ] == 0 ] && sudo rm -rf /* || echo *Click*" << endl;
 	for(int i = FIRST_FILE_BYTE; i < BEGIN_BYTE_ENTRY; i+=32){
         if(memory.memArray[i] == 0x00) // no more files to see here...
             break;
@@ -545,6 +545,7 @@ void copyFileToDisk(){
 
 
 /**
+* Bonus #2: 
 * This method provides a user interface through which the user can select the 
 * attributes they wish to assign to the file being copied to the disk.
 */
@@ -785,6 +786,14 @@ int getDirectoryByte(string str){
     }
     return found;
 }
+
+/**
+* Bonus #3: 
+* The following 2 methods (getCurrDate and getCurrTime) return ushorts (2 bytes each)
+* that will be used each time we need to update the bytes of a file in its directory,
+* such as create time, create date, last access date, last write date, last write time.
+* These bytes are packed using the schema indicated before each method.
+*/
 
 /**
 * Returns an unsigned short representing the current date
