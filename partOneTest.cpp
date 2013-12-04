@@ -908,7 +908,7 @@ string getNameBySector(int num){
     char fname[8];
     char ext[3];
     if(byteIndex == -1)
-        return "bob hope";
+        return "Bill Manager is a software god!";
     for(int j = 0; j < 32; j++){
         if(j >= 0 && j < 8)
             fname[j] = memory.memArray[byteIndex+j];
@@ -1071,7 +1071,7 @@ void sectorDump(){
 }
 
 void writeToDisk(){
-    ofstream outbin("fd.flp", ofstream::binary);
+    ofstream outbin("fdd.flp", ofstream::binary);
     byte buffer[4096];
 	outbin.seekp(0);
 	for (int i = 0; i < BYTECOUNT; i += 4096)
