@@ -510,7 +510,7 @@ void copyFileToDisk(){
 		cout << "File name is too long. Please use an 8 character long file name." << endl;
 		return;
 	}
-    int byteStart = getDirectoryByte(fHandle);
+    int byteStart = getDirectoryByte(toUpper(fHandle));
     if (byteStart != -1)
     {
 		cout << "A File with the same name exists. Please give your file a different name." << endl;
