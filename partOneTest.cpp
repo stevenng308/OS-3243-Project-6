@@ -26,13 +26,15 @@
 
 using namespace std;
 
-// Define Structs
+// Define Global Variables
 
 typedef unsigned char byte;
 
 string bar = "           |----+----|----+----|----+----|----+----|----+----|----+----|----+----|----+----\n";
 string menuOptions = "\nMenu:\n1) List Directory\n2) Copy file to disk\n3) Delete file\n4) Rename a file\n5) Usage map\n6) Directory dump\n7) FAT dump\n8) FAT chain\n9) Sector dump\n0) Quit\n> ";
 int freeFatEntries; // added 1 to get quantity, subtract 2 since entries 0 and 1 are reserved
+
+// Define Structs
 
 struct MainMemory{
     byte memArray[BYTECOUNT]; // 0-511 is for the boot partition
@@ -62,37 +64,37 @@ struct File
 	File(); 
 };
 
-MainMemory memory;
+MainMemory memory; 
 
 // Declare Methods
 void loadSystem();
 void initializeFAT();
 void setEntry(ushort pos, ushort val);
-ushort getEntry(ushort pos);
-ushort findFreeFat(ushort a);
 void insertFile(File &f, int start);
 void createFile(byte n[8], byte e[3], byte a, ushort r, ushort ct, ushort cd, ushort lad, ushort i, ushort lmt, ushort lmd, ushort fls, uint s);
-int findEmptyDirectory();
-ushort getCurrDate();
-ushort getCurrTime();
-ushort setFatChain(ushort pos, int size);
-ushort findFirstFitFat(ushort n);
 void setFirstDirectoryBytes();
 void freeFatChain(ushort a);
-int getDirectoryByte(string str);
 void printFatChain(ushort num,ushort FATs[], int index);
-int getUsedBytes();
-short getUsedSectors();
-short *filesAndSectorStats();
 void updateAccessDate(int startByte);
 void writeOutFile(string s);
 void writeToDisk();
 void writeBackupFloppy(string s);
 void writeBackupFloppy();
-string getNameBySector(int num);
+ushort getEntry(ushort pos);
+ushort findFreeFat(ushort a);
+ushort getCurrDate();
+ushort getCurrTime();
+ushort setFatChain(ushort pos, int size);
+ushort findFirstFitFat(ushort n);
+int findEmptyDirectory();
+int getDirectoryByte(string str);
+int getUsedBytes();
+short getUsedSectors();
+short *filesAndSectorStats();
 bool fatsAreConsistent();
 byte getAttributes();
 string toUpper(string str);
+string getNameBySector(int num);
 
 // Requested User Options
 void listDirectory();   // option # 1
@@ -105,28 +107,6 @@ void listFatChain();    // option # 8
 void sectorDump();      // option # 9
 
 int main(){
-    /*
-    ifstream ifile("fdd.flp",std::ifstream::in);
-    byte b = ifile.get();
-
-
-    //byte copiedFile
-
-    int c = 0;
-    while (ifile.good()){
-        printf("%02x ",b);
-        b = ifile.get();
-        if(c == 7){
-            printf(" ");
-        }
-        if(c == 15){
-            printf("\n");
-            c = 0;
-        }
-        else
-            ++c;
-    }
-    printf("%d", memory.findFreeMemory());*/
     loadSystem();
     initializeFAT();
     int answer;
@@ -146,37 +126,37 @@ int main(){
         switch(answer){
             case 1:
                 listDirectory();
-                writeToDisk(); // file access date updated
+                writeToDisk(); // file access date is updated
                 break;
             case 2:
                 copyFileToDisk();
-                writeToDisk(); // file added to disk
+                writeToDisk(); // file is added to disk
                 break;
             case 3:
                 deleteFile();
-                writeToDisk(); // file removed from disk
+                writeToDisk(); // file is removed from disk
                 break;
             case 4:
                 renameFile();
-                writeToDisk(); // file name and last access/write date and time updated
+                writeToDisk(); // file name and last access/write date and time are updated
                 break;
             case 5:
                 memory.print();
                 break;
             case 6:
                 directoryDump();
-                writeToDisk(); // file access date updated
+                writeToDisk(); // file access date is updated
                 break;
             case 7:
                 fatDump();
                 break;
             case 8:
                 listFatChain();
-                writeToDisk(); // file access date updated
+                writeToDisk(); // file access date is updated
                 break;
             case 9:
                 sectorDump();
-                writeToDisk(); // file access date updated
+                writeToDisk(); // file access date is updated
                 break;
             default:
                 return 0;
@@ -193,7 +173,7 @@ int main(){
 */
 void loadSystem()
 {
-	ifstream ifile("fd.flp",std::ifstream::in); //change fd.flp to fdd.flp
+	ifstream ifile("fdd.flp",std::ifstream::in);
     byte b = ifile.get();
     int c = 0;
     while (ifile.good()){
@@ -201,6 +181,10 @@ void loadSystem()
 		b = ifile.get();
 		++c;
 	}
+	// Bonus #1: This if statement determines if the partition signature has been written to disk yet
+	// If the partition signature has not been written to disk, we do that here. These 64 bytes are 
+	// located at the end of the boot sector on disk and range from byte number 465 to 509. Bytes 510 
+	// and 511 are reserved for the 0x55AA, the boot signature.
 	if (memory.memArray[465] == 0)
 	{
 		//Each entry can be multiple bytes. Storing most significant bytes first then the least significant byte last.
