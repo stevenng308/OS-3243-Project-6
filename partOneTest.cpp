@@ -386,6 +386,13 @@ void listDirectory(){
 	int fileMemUse = 0;
 	short numFiles = 0;
 	printf("Volume Serial Number is ");
+	for (int k = 485; k < 489; k++)
+	{
+		if (k == 487)
+			cout << "-";
+		printf("%1X", memory.memArray[k]);
+	}
+	printf("\nVolume Label is ");
 	for (int k = 489; k < 500; k++)
 	{
 		printf("%1c", memory.memArray[k]);
