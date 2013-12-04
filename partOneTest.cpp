@@ -364,7 +364,7 @@ void listDirectory(){
 	
 	int fileMemUse = 0;
 	short numFiles = 0;
-	printf("Volume Serial Number is ");
+	printf("\nVolume Serial Number is ");
 	for (int k = 485; k < 489; k++)
 	{
 		if (k == 487)
@@ -1178,8 +1178,8 @@ ushort findFreeFat(ushort a)
 }
 
 /**
- * Update the access date of a file using the file's directory entry's first byte
- */
+* Update the access date of a file using the file's directory entry's first byte
+*/
 void updateAccessDate(int startByte)
 {
 	ushort ad = getCurrDate();
