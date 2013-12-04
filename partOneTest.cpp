@@ -211,7 +211,7 @@ void loadSystem()
 		memory.memArray[480] = 0;
 		memory.memArray[481] = 0;
 		//ignore 482-483
-		memory.memArray[484] = 0x29; //boot signarture. value 0x29 == 41 signals that the following 3 are present
+		memory.memArray[484] = 0x29; //extended boot signature. value 0x29 == 41 signals that the following 3 are present
 		
 		//volume id. using current date and time, respectively, as a 32 bit value
 		ushort currdate = getCurrDate(); 
