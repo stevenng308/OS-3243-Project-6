@@ -182,7 +182,7 @@ void loadSystem()
 	// If the partition signature has not been written to disk, we do that here. These 64 bytes are 
 	// located at the end of the boot sector on disk and range from byte number 465 to 509. Bytes 510 
 	// and 511 are reserved for the 0x55AA, the boot signature.
-	if (memory.memArray[465] == 0)
+	if (memory.memArray[462] == 0)
 	{
 		//Each entry can be multiple bytes. Storing most significant bytes first then the least significant byte last.
 		memory.memArray[457] = 0x20; //bytes per sector
@@ -219,17 +219,17 @@ void loadSystem()
 		memory.memArray[488] = currtime & 0xFF;
 		
 		//volume label
-		memory.memArray[489] = 0;
-		memory.memArray[490] = 0;
-		memory.memArray[491] = 0x31;
-		memory.memArray[492] = 0x33;
-		memory.memArray[493] = 0x33;
-		memory.memArray[494] = 0x37;
-		memory.memArray[495] = 0x2D;
-		memory.memArray[496] = 0x48;
-		memory.memArray[497] = 0x34;
-		memory.memArray[498] = 0x4B;
-		memory.memArray[499] = 0x52;
+		memory.memArray[489] = 0x42;
+		memory.memArray[490] = 0x49;
+		memory.memArray[491] = 0x4C;
+		memory.memArray[492] = 0x4C;
+		memory.memArray[493] = 0x4D;
+		memory.memArray[494] = 0x4E;
+		memory.memArray[495] = 0x47;
+		memory.memArray[496] = 0x52;
+		memory.memArray[497] = 0x47;
+		memory.memArray[498] = 0x4F;
+		memory.memArray[499] = 0x44;
 	    
 	    //FAT type
 		memory.memArray[500] = 0x46;
